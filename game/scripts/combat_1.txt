@@ -1,0 +1,48 @@
+init python:
+    class Combatant:
+        def __init__(self, name, attack, max_hp, hp):
+            self.name = name
+            self.attack = attack
+            self.max_hp = max_hp
+            self.hp = hp
+ 
+        def take_damage(self, damage):
+            self.hp -= damage
+            if self.hp <= 0:
+                self.hp = 0
+                narrator("{} has been defeated!".format(self.name))
+            else:
+                narrator("{} took {} damage!".format(self.name, damage))
+ 
+ 
+label start:
+ 
+    python:
+        player = Combatant("Player", 3, 10, 10)
+        enemy = Combatant("Enemy", 2, 8, 8)
+ 
+    while player.hp > 0:
+        # Player Turn
+        menu:
+            "Attack":
+                #change it so that it jumps to an attack function not done inside the menu that way we don't have to be bothered to work with renpy's way of incorportating actual python code
+                $ damage = player.attack
+                $ enemy.take_damage(damage)
+                "that's a strong hit! Enemy has [enemy.hp]!"
+                if enemy.hp <= 0:
+                    jump win
+                if player.hp <= 0:
+                    jump lose
+ 
+            "Don't Attack":
+                "You don't attack..."
+ 
+        # Enemy turn
+        $ damage = enemy.attack
+        $ player.hp -=damage
+        "The enemy makes an attack, reducing you to [player.hp] hp!"
+label win:
+    "You win the combat encounter"
+ 
+label lose:
+"You died..."

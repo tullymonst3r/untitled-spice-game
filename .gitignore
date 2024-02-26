@@ -1,3 +1,26 @@
 errors.txt
 log.txt
 traceback.txt
+
+# **/*.jpg
+# **/*.png
+# **/*.png.bak
+
+/game/images/*.jpg
+/game/images/*.png
+/game/images/*.png.bak
+
+/game/images/*/*.jpg
+/game/images/*/*.png
+/game/images/*/*.png.bak
+
+/game/images/animations/*/*.jpg
+/game/images/animations/*/*.png
+/game/images/animations/*/*.png.bak
+
+/game/images/statuses/*.jpg
+/game/images/statuses/*.png
+/game/images/statuses/*.png.bak
+
+/game/audio/*.mp3
+/game/audio/*/*.mp3

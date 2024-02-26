@@ -1,264 +1,478 @@
 init -10 python in combatlib: 
     from enum import Enum
     import math
+    import copy
     import random
     import store.itemslib as itemslib
     import store.spellslib as spellslib
+    import store.effectsLib as effectsLib
+    import store.playerLib as playerLib
 
-    combatChars = {}
+    # GLOBALS CONSTANTS
+    critMultiplier = 2 # percentage each finesse point is equals to
+    meleeMinChance = 50 # minimum chance of hit when no speed diff
+    speedMultiplier = 10 # percentage each speed diff point is equals to
+    accuMultiplier = 2 # percentage each speed diff point is equals to
 
-    # Variables for combat
-    # allies = []
-    # enemies = []
+    attacks = {}
+    combatChars = {} # Dict of every different 
+    wonLastCombat = False
+    hideSpritesAfterBattle = True
+    gauntlet = False # While true battles won't reset health and mana
+    arenaChars = {} # Dict of characters in combat (copies)
+    arenaTags = [] # tags of chars in combat (order of turns)
+    allies = []
+    alliesAlive = []
+    enemies = []
+    enemiesAlive = []
+
+    def addCharacter(tag: str, combatChar: CombatCharacter):
+        global combatChars
+        combatChar.tag = tag
+        combatChar.ogTag = tag
+        combatChars[tag] = combatChar
+        combatChars = combatChars
+    def addAttack(tag: str, attack: Attack):
+        global attacks
+        attack.tag = tag
+        attacks[tag] = attack
+        attacks = attacks
+
+    def updateCharsDict():
+        global combatChars
+        combatChars = combatChars
+    def resetArena():
+        global arenaChars
+        arenaChars = {}
+    def addCharacterToArena(tag, newTag):
+        global arenaChars, combatChars
+        charCopy = copy.deepcopy(combatChars[tag])
+        charCopy.tag = newTag
+        arenaChars[newTag] = charCopy
+        arenaChars = arenaChars
+
+
 
     class CombatCharacter(object):
-        exp: int = 0
-        level: int = 1
+        xp: int = 0
+        upgrades: int = 0
         x: int = 0
         y: int = 0
-        inventory = [ ]
-        def __init__(self, name: str, spriteName: str, baseHealth: int, *args, **kwargs):
+        zorder: int = 0
+        tsTotalMana = 0 # Mana cost reduction from all equiped TerraSpeheres combined
+        tsTotalDamage = 0 # Damage increase on new magic spells from all equiped TerraSpeheres combined
+        damageDone = 0
+        healDone = 0
+        summonedBy = None # Tag of the character that summoned it.
+        transFrom = None # Tag of the character that transformed into this char.
+        def __init__(self, name: str, *args, **kwargs):
             self.name = name
-            self.baseHealth = baseHealth
-            self.health = baseHealth
-            self.spriteName = spriteName
-            self.baseStrength = kwargs.get('baseStrength', 10)
-            self.baseDefense = kwargs.get('baseDefense', 0)
-            self.baseSpeed = kwargs.get('baseSpeed', 5)
-            self.baseFinesse = kwargs.get('baseFinesse', 1)
+            self.tag = kwargs.get('tag', None)
+            self.ogTag = self.tag
+            self.spriteName = kwargs.get('spriteName', 'garlic_chives')
+            self.baseHealth = kwargs.get('baseHealth', 100)
+            self.health = self.baseHealth
             self.baseMana = kwargs.get('baseMana', 0)
             self.mana = self.baseMana
+            self.baseTurns = kwargs.get('baseTurns', 1)
+            self.turns = self.baseTurns
+
+            # Stats
+            self.baseStrength = kwargs.get('baseStrength', 10) # Damage added to melee attacks
+            self.strength = self.baseStrength
+            self.baseDefense = kwargs.get('baseDefense', 0) # % of non magic damage mitigated (Minimum damage possible)
+            self.defense = self.baseDefense
+            self.baseSpeed = kwargs.get('baseSpeed', 5) # Affect chances of hitting or avoiding melee attacks (based on speed difference between attacker and target)
+            self.speed = self.baseSpeed
+            self.baseFinesse = kwargs.get('baseFinesse', 1) # Chances of crit damage in non magic attacks (1 = 5%)
+            self.finesse = self.baseFinesse
+            self.baseAccuracy = kwargs.get('baseAccuracy', 1) # Chances of hitting range and magic attacks
+            self.accuracy = self.baseAccuracy
+            self.baseMagicDef = kwargs.get('baseMagicDef', 0) # % of magic damage mitigated (Minimum damage possible)
+            self.magicDef = self.baseMagicDef
+
+
+            # Special stats. Ignore randomness. Too OP. Watch out
+            self.baseNimbleness = kwargs.get('baseNimbleness', 0) # Increases chances of avoiding all attacks (1 = +1% chance of dodging)
+            self.nimbleness = self.baseNimbleness # Avoid setting default too high or the battle becomes too annoying
+            self.baseFocus = kwargs.get('baseFocus', 0) # Increases chances of hitting all attacks (1 = +1% chance of dodging)
+            self.focus = self.baseFocus # Beats nimbleness
+            # #######################
+            
             self.level = kwargs.get('level', 1)
-            self.hand = kwargs.get("hand", None)
-            self.spells = kwargs.get("spells", (None, None))
-            self.fightClass = kwargs.get('fightClass', FightClass.NPC)
-        def levelup(self):
-            reqExp = 100
-            if self.level > 1:
-                reqExp = 100 * pow(1 + (((self.level + 1)/10) - 0.1))
-            if self.exp >= reqExp:
-                self.level * self.level + 1
-                self.exp = self.exp - reqExp
-        def addItem(self, item: str):
-            self.inventory.append(item)
+            self.isPlayable = kwargs.get('isPlayable', False)
 
-    class FightClass(Enum):
-        WAR = 'warrior'
-        OM = 'old_magic'
-        NM = 'new_magic'
-        BSM = 'blacksmith'
-        RNG = 'ranger'
-        NPC = 'npc'
+            self.effects = kwargs.get('effects', {})
+            self.equipmentLevels = kwargs.get('equipmentLevels', {})
+            self.unlockedSpells = kwargs.get('unlockedSpells', {})
+            self.unlockedAttacks = kwargs.get('unlockedAttacks', {})
+            self.lockedAttacks = kwargs.get('lockedAttacks', [])
+            self.equipment = [None, None, None, None]
+            innitialEquipments = kwargs.get('equipment', None)
+            if innitialEquipments is not None:
+                for (index, equipment) in enumerate(innitialEquipments):
+                    if isinstance(equipment, tuple):
+                        self.assignSlot(index, equipment[0])
+                        self.equipmentLevels[equipment[0].tag] = equipment[1]
+                    else:
+                        self.assignSlot(index, equipment)
+            else:
+                self.equipment[0] = Attack()
+            
+            self.loot = kwargs.get('loot', [])
+            self.gold = kwargs.get('gold', 0)
+        def __str__(self):
+            return self.name
+        def gainXp(self, xp):
+            hasLeveledUp = False
+            canLevelUp = True
+            self.xp += xp
+            while canLevelUp:
+                reqExp = 100
+                if self.level > 1:
+                    reqExp =  int(pow(100, 1 + (((self.level + 1)/10) - 0.1)))
+                if self.xp >= reqExp:
+                    self.level += 1
+                    self.upgrades += int(( 0.8 * math.sqrt(self.level) ) + 0.5)
+                    hasLeveledUp = True
+                    self.xp = self.xp - reqExp
+                else:
+                    canLevelUp = False
+            return hasLeveledUp
+        def assignSlot(self, index: int, equipment):
+            if (index <= len(self.equipment)-1) and (self.equipment[index] is not None) and (self.equipment[index].tag is not None):
+                className = self.equipment[index].__class__.__name__
+                if className == 'Item':
+                    itemslib.items[self.equipment[index].tag].equipped = False
+                if className == 'Spell':
+                    self.unlockedSpells[self.equipment[index].tag] = False
+                if className == 'Attack':
+                    self.unlockedAttacks[self.equipment[index].tag] = False
+            if (equipment is not None) and (equipment.tag is not None):
+                className = equipment.__class__.__name__
+                if className == 'Item':
+                    equipment.equipped = True
+                elif className == 'Spell':
+                    self.unlockedSpells[equipment.tag] = True
+                elif className == 'Attack':
+                    self.unlockedAttacks[equipment.tag] = True
+            if (index <= len(self.equipment)-1):
+                # Replaces equipment at index
+                self.equipment[index] = copy.deepcopy(equipment)
+            else:
+                # Pushes equipment at the end of list
+                self.equipment.append(copy.deepcopy(equipment))
+            self.calcTerrasphereStats()
+        def calcTerrasphereStats(self):
+            self.tsTotalMana = 0
+            self.tsTotalDamage = 0
+            for equipment in self.equipment:
+                if (equipment is not None) and (equipment.__class__.__name__ == 'Item'):
+                    if equipment.weaponType == 'magic':
+                        self.tsTotalMana += equipment.manaReduction
+                        self.tsTotalDamage += equipment.attackData.damage
 
+    class AttackData(object): # Attack modifiers
+        def __init__(self, *args, **kwargs):
+            self.target = kwargs.get('target', 'enemy') # enemy | enemies | ally | allies | self | all | any
+            self.hits = kwargs.get('hits', 1) # number of hits per attack
+            self.baseCooldown = kwargs.get('baseCooldown', 0) # Cooldown applied after use
+
+            self.damage = kwargs.get('damage', 0) # Damage modifier.
+            self.noDamage = kwargs.get('noDamage', False) # Whether the attack ignores damage on melee attacks.
+            self.forceHitChance = kwargs.get('forceHitChance', False) # Whether checks hit chance even when no damage.
+            self.heal = kwargs.get('heal', 0) # Heal modifier. Negatives are ignored.
+            self.mana = kwargs.get('mana', 0) # Steal | regen mana to target
+            self.weight = kwargs.get('weight', 0) # Weapon weight, speed modifier
+            self.accuracy = kwargs.get('accuracy', 0) # Range and magic attacks accuracy
+            self.finesse = kwargs.get('finesse', 0) # Normal attacks precision
+
+            self.active_effects = kwargs.get('active_effects', []) # effects applied to target on use
+            self.passive_effects = kwargs.get('passive_effects', []) # effects applied to users on equipping
+            self.animation = kwargs.get('animation', 'impact') # Animation played on the target on use
+            self.sfx = kwargs.get('sfx', '22_Slash_04.mp3') # Sound effect played on use
+            self.verb = kwargs.get('verb', 'uses') # Verb (third person) that goes along with the name of the equipment (character "USES" punch)
+            self.specialAction = kwargs.get('specialAction', None) # Name of function called when effect activates. (str)
+            self.specialVal = kwargs.get('specialVal', None) # Value passed to the special action function. (str)
+        def __str__(self):
+            return self.damage
+    class Attack(object): # Attack modifiers
+        def __init__(self, *args, **kwargs):
+            self.name = kwargs.get('name', 'Punch') # Displayed Name (optional. Required for normal type)
+            self.description = kwargs.get('description', '') # Displayed Name (optional. Required for normal type)
+            self.attackType = kwargs.get('attackType', 'melee') # melee | range | magic
+            self.tag = kwargs.get('tag', None)
+            self.cd = kwargs.get('cd', 0) # cooldown
+            self.xpPrice = kwargs.get('xpPrice', 0) # Cost to unlock attack
+            self.attackData = kwargs.get('attackData', AttackData()) # AttackData
+
+    
     def resetChars(chars):
+        global gauntlet
         for tag in chars:
-            combatChars[tag].health = combatChars[tag].baseHealth
+            if tag is not None:
+                if gauntlet == False:
+                    combatChars[tag].health = combatChars[tag].baseHealth
+                    combatChars[tag].mana = combatChars[tag].baseMana
+                combatChars[tag].strength = combatChars[tag].baseStrength
+                combatChars[tag].defense = combatChars[tag].baseDefense
+                combatChars[tag].speed = combatChars[tag].baseSpeed
+                combatChars[tag].finesse = combatChars[tag].baseFinesse
+                combatChars[tag].turns = combatChars[tag].baseTurns
+                combatChars[tag].effects = {}
     
-    def weaponAttack(attacker, target):
-        if combatChars[attacker].hand is not None:
-            weapon = itemslib.items[combatChars[attacker].hand]
-            if weapon.weaponData['type'] == 'melee':
-                return attackMelee(attacker, target)
-            elif weapon.weaponData['type'] == 'range':
-                return attackRange(attacker, target)
-            elif weapon.weaponData['type'] == 'magic':
-                return attackMagicWeapon(attacker, target) 
-        else:
-            return attackFists(attacker, target)
-        return (0, 0)
-
-    def attackFists(attacker, target):
-        # At same speed chances if hit are 50%
-        attackPrecision = 50
-        # TODO: use current speed incase buffs or debuffs
-        # Each point of speed difference adds or removes 10% or hit TODO: Maybe 10% is too much?
-        # Weapon weight affects attacker speed
-        speedDif = combatChars[attacker].baseSpeed - combatChars[target].baseSpeed
-        attackPrecision += speedDif * 10
-        # caps between 0 and 100
-        if attackPrecision < 0:
-            attackPrecision = 0
-        if attackPrecision > 100:
-            attackPrecision = 100
-        attackChance = random.randrange(attackPrecision, 101)
-        if random.randrange(100) < attackChance:
-            # successfull hit
-            # attacker strength and weapon damage combined
-            maxAttackDamage = combatChars[attacker].baseStrength
-            # target defense has random chance of reducing incomming damage
-            minAttackDamage = maxAttackDamage - combatChars[target].baseDefense
-            if minAttackDamage < 0:
-                minAttackDamage = 0
-            damage = random.randrange(minAttackDamage, maxAttackDamage+1)
-            # 5% chance of crit for each point of finesse
-            critChance = combatChars[attacker].baseFinesse * 5
-            if random.randrange(100) < critChance:
-                # crit hit. doubles the damage
-                damage = damage * 2
-                combatChars[target].health -= damage
-                if combatChars[target].health < 0:
-                    combatChars[target].health = 0
-                return (2, damage)
-            else:
-                #normal hit
-                combatChars[target].health -= damage
-                if combatChars[target].health < 0:
-                    combatChars[target].health = 0
-                return (1, damage)
-        else:
-            return (0, 0)
+    def actionAttack(attacker: CombatCharacter, targetTags, equipment):
+        if equipment.__class__.__name__ == 'Item':
+            weaponAttack(attacker, targetTags, equipment)
+        elif equipment.__class__.__name__ == 'Spell':
+            spellAttack(attacker, targetTags, equipment)
+        elif equipment.__class__.__name__ == 'Attack':
+            normalAttack(attacker, targetTags, equipment)
+        # Set cooldown if applied
+        if equipment.attackData.baseCooldown > 0: equipment.cd = equipment.attackData.baseCooldown
     
-    def attackMelee(attacker, target):
-        # At same speed chances if hit are 50%
-        attackPrecision = 50
-        # TODO: use current speed incase buffs or debuffs
-        # Each point of speed difference adds or removes 10% or hit
-        # Weapon weight affects attacker speed
-        weapon = itemslib.items[combatChars[attacker].hand]
-        speedDif = (combatChars[attacker].baseSpeed - weapon.weaponData['weight']) - combatChars[target].baseSpeed
-        attackPrecision += speedDif * 10
-        # caps between 0 and 100
-        if attackPrecision < 0:
-            attackPrecision = 0
-        if attackPrecision > 100:
-            attackPrecision = 100
-        attackChance = random.randrange(attackPrecision, 101)
-        if random.randrange(100) < attackChance:
-            # successfull hit
-            # attacker strength and weapon damage combined
-            maxAttackDamage = combatChars[attacker].baseStrength + weapon.weaponData['damage']
-            # target defense has random chance of reducing incomming damage
-            minAttackDamage = maxAttackDamage - combatChars[target].baseDefense
-            if minAttackDamage < 0:
-                minAttackDamage = 0
-            damage = random.randrange(minAttackDamage, maxAttackDamage+1)
-            # 5% chance of crit for each point of finesse
-            critChance = combatChars[attacker].baseFinesse * 5
-            if random.randrange(100) < critChance:
-                # crit hit. doubles the damage
-                damage = damage * 2
-                combatChars[target].health -= damage
-                if combatChars[target].health < 0:
-                    combatChars[target].health = 0
-                return (2, damage)
-            else:
-                #normal hit
-                combatChars[target].health -= damage
-                if combatChars[target].health < 0:
-                    combatChars[target].health = 0
-                return (1, damage)
-        else:
-            return (0, 0)
+    def normalAttack(attacker: CombatCharacter, targetTags, equipment):
+        if equipment.attackType == 'melee':
+            meleeAttack(attacker, targetTags, equipment.attackData)
+        elif equipment.attackType == 'range':
+            rangeAttack(attacker, targetTags, equipment.attackData)
+        elif equipment.attackType == 'magic':
+            magicAttack(attacker, targetTags, equipment.attackData)
 
-    def attackRange(attacker, target):
-        # TODO: use current speed incase buffs or debuffs
-        # Weapon precision and attackers finesse add up to total precision
-        weapon = itemslib.items[combatChars[attacker].hand]
-        attackPrecision = (combatChars[attacker].baseFinesse + weapon.weaponData['precision']) * 4
+    def weaponAttack(attacker: CombatCharacter, targetTags, equipment):
+        if equipment.weaponType == 'melee':
+            meleeAttack(attacker, targetTags, equipment.attackData)
+        elif equipment.weaponType == 'range':
+            rangeAttack(attacker, targetTags, equipment.attackData)
+        elif equipment.weaponType == 'magic':
+            magicAttack(attacker, targetTags, equipment.attackData)
+        elif equipment.weaponType == 'consumable':
+            itemAttack(attacker, targetTags, equipment.attackData)
+            playerLib.itemsInventory[equipment.tag] -= 1
+    
+    def meleeAttack(attacker: CombatCharacter, targetTags, attackData: AttackData):
+        global critMultiplier, speedMultiplier, meleeMinChance
+        totalDamage = 0
+        totalHeal = 0
+        maxAttackDamage = attacker.strength + attackData.damage
+        critChance = (attacker.finesse + attackData.finesse) * critMultiplier
+        for i in range(attackData.hits):
+            for targetTag in targetTags:
+                target = arenaChars[targetTag]
+                minimumChanceOfHit = meleeMinChance
+                speedDif = (attacker.speed - attackData.weight) - target.speed
+                minimumChanceOfHit += speedDif * speedMultiplier
+                # caps between 0 and 100
+                if minimumChanceOfHit < 0:
+                    minimumChanceOfHit = 0
+                if minimumChanceOfHit > 100:
+                    minimumChanceOfHit = 100
+                attackChance = random.randrange(minimumChanceOfHit, 101)
+                (damageDone, healDone) = attack(target, attackData, attackChance, maxAttackDamage, critChance, 'normal', attacker.focus, i == attackData.hits - 1)
+                totalDamage += damageDone
+                totalHeal += healDone
+            if attackData.hits > 1:
+                renpy.pause(0.25)
+        attacker.damageDone += totalDamage
+        attacker.healDone += totalHeal
+        return totalDamage
+
+    def rangeAttack(attacker: CombatCharacter, targetTags, attackData: AttackData):
+        global critMultiplier, accuMultiplier
+        totalDamage = 0
+        totalHeal = 0
+        maxAttackDamage = attackData.damage
+        minimumChanceOfHit = (attacker.accuracy + attackData.accuracy) * accuMultiplier
+        critChance = (attacker.finesse + attackData.finesse) * critMultiplier
         # caps precision at 100%
-        if attackPrecision > 100:
-            attackPrecision = 100
-        hitChance = random.randrange(attackPrecision, 101)
-        if random.randrange(100) < hitChance:
-            # successfull hit
-            # attacker strength has no effect
-            maxAttackDamage = itemslib.items[combatChars[attacker].hand].weaponData['damage']
-            # target defense has random chance of reducing incomming damage
-            damage = random.randrange(maxAttackDamage - combatChars[target].baseDefense, maxAttackDamage+1)
-            combatChars[target].health -= damage
-            if combatChars[target].health < 0:
-                combatChars[target].health = 0
-            return (1, damage)
-        else:
-            return (0, 0)
-
-    def attackMagicWeapon(attacker, target):
-        # 100% chance of hit
-        # attacker strength has no effect
-        # attack ignores defenses
-        weapon = itemslib.items[combatChars[attacker].hand]
-        maxAttackDamage = weapon.weaponData['damage']
-        combatChars[target].health -= maxAttackDamage
-        if combatChars[target].health < 0:
-            combatChars[target].health = 0
-        return (1, maxAttackDamage)
+        if minimumChanceOfHit > 100:
+            minimumChanceOfHit = 100
+        for i in range(attackData.hits):
+            for targetTag in targetTags:
+                target = arenaChars[targetTag]
+                attackChance = random.randrange(minimumChanceOfHit, 101)
+                (damageDone, healDone) = attack(target, attackData, attackChance, maxAttackDamage, critChance, 'normal', attacker.focus, i == attackData.hits - 1) # No crits
+                totalDamage += damageDone
+                totalHeal += healDone
+            if attackData.hits > 1:
+                renpy.pause(0.25)
+        attacker.damageDone += totalDamage
+        attacker.healDone += totalHeal
+        return totalDamage
     
-    def castSpell(attackerTag, targetTag, spellIndex):
-        # 100% chance of hit
-        # attack ignores defenses
-        attacker = combatChars[attackerTag]
-        attackerSpell = combatChars[attackerTag].spells[spellIndex]
-        if attackerSpell is not None:
-            spell = spellslib.spells[attackerSpell['tag']]
-            if spell.damage > 0:
-                damage = 0
-                weapon = None
-                if (attacker.hand is not None) and (itemslib.items[attacker.hand].weaponData['type'] == 'magic'):
-                    weapon = itemslib.items[attacker.hand]
-                if spell.magicType == 'old':
-                    damage = int(spell.damage * math.sqrt(attackerSpell['lvl']))
-                    attackerSpell['cd'] = spell.cooldown
-                else:
-                    if weapon is not None:
-                        damage = spell.damage + weapon.weaponData['damage']
-                combatChars[targetTag].health -= damage
-                if combatChars[targetTag].health < 0:
-                    combatChars[targetTag].health = 0
-                if weapon is not None:
-                    manaCost = spell.cost - weapon.weaponData['mana']
-                    if manaCost > 0:
-                        attacker.mana -= manaCost
-                else:
-                    attacker.mana -= spell.cost
+    def magicAttack(attacker: CombatCharacter, targetTags, attackData: AttackData):
+        global accuMultiplier
+        totalDamage = 0
+        totalHeal = 0
+        maxAttackDamage = attackData.damage
+        minimumChanceOfHit = (attacker.accuracy + attackData.accuracy) * accuMultiplier
+        if minimumChanceOfHit > 100:
+            minimumChanceOfHit = 100
+        for i in range(attackData.hits):
+            for targetTag in targetTags:
+                target = arenaChars[targetTag]
+                (damageDone, healDone) = attack(target, attackData, minimumChanceOfHit, maxAttackDamage, 0, 'magic', attacker.focus, i == attackData.hits - 1) # 100% attack chance | No crit chance | Ignore defense
+                totalDamage += damageDone
+                totalHeal += healDone
+            if attackData.hits > 1:
+                renpy.pause(0.25)
+        if attackData.specialAction is not None:
+            method = getattr(spellslib, attackData.specialAction)
+            method(attacker, attackData.specialVal)
+        attacker.damageDone += totalDamage
+        attacker.healDone += totalHeal
+        return totalDamage
+
+    def itemAttack(attacker: CombatCharacter, targetTags, attackData: AttackData):
+        maxAttackDamage = attackData.damage
+        for i in range(attackData.hits):
+            for targetTag in targetTags:
+                target = arenaChars[targetTag]
+                attack(target, attackData, 100, maxAttackDamage, 0, None, 0, i == attackData.hits - 1) # 100% attack chance | No crit chance | Ignore defense
+            if attackData.hits > 1:
+                renpy.pause(0.25)
+        if attackData.specialAction is not None:
+            method = getattr(spellslib, attackData.specialAction)
+            method(attacker, attackData.specialVal)
+
+    def spellAttack(attacker: CombatCharacter, targetTags, equipment):
+        global accuMultiplier
+        totalDamage = 0
+        totalHeal = 0
+        # Calculate mana cost
+        manaCost = equipment.cost - attacker.tsTotalMana if equipment.cost - attacker.tsTotalMana > 0 else 0
+        attacker.mana -= manaCost
+        attackData = equipment.attackData
+        minimumChanceOfHit = (attacker.accuracy + attackData.accuracy) * accuMultiplier
+        if minimumChanceOfHit > 100:
+            minimumChanceOfHit = 100
+        maxAttackDamage = 0
+        if attackData.damage > 0:
+            # Calculate spell's damage
+            if equipment.magicType == 'old':
+                # spellLvl = attacker.equipmentLevels.get(equipment.tag, 1) I think this is replaces the next 3 lines
+                spellLvl = 1
+                if equipment.tag in attacker.equipmentLevels:
+                    spellLvl = attacker.equipmentLevels[equipment.tag]
+                # maxAttackDamage = int(attackData.damage * math.sqrt(attackerSpell.lvl + attacker.level))
+                maxAttackDamage = int(attackData.damage * math.sqrt(spellLvl))
+            else:
+                maxAttackDamage = attackData.damage + attacker.tsTotalDamage
+        for i in range(attackData.hits):
+            for targetTag in targetTags:
+                target = arenaChars[targetTag]
+                (damageDone, healDone) = attack(target, attackData, minimumChanceOfHit, maxAttackDamage, 0, 'magic', attacker.focus, i == attackData.hits - 1) # 100% attack chance | No crit chance | Ignore defense
+                totalDamage += damageDone
+                totalHeal += healDone
+            if attackData.hits > 1:
+                renpy.pause(0.25)
+        if attackData.specialAction is not None:
+            method = getattr(spellslib, attackData.specialAction)
+            method(attacker, attackData.specialVal)
+        # Set cooldown if applied
+        # equipment.cd = equipment.attackData.baseCooldown if equipment.magicType == 'old' else 0
+        attacker.damageDone += totalDamage
+        attacker.healDone += totalHeal
+        return totalDamage
+
+    def attack(target, attackData: AttackData, attackChance, maxAttackDamage, critChance = 0, attackType = None, focus = 0, lastHit = True):
+        # attackType = 'normal' - uses target's normal defense | 'magic' - Uses target's magic defense | None - Ignores defenses
+        hitType = 1 # 0 - miss | 1 - hit(at least one) | 2 - crit(at least one)
+        totalDamage = 0
+        totalHeal = 0
+        if target.nimbleness != 0:
+            attackChance -= target.nimbleness
+        if focus != 0:
+            attackChance += focus
+        if (attackData.noDamage == False) and (maxAttackDamage > 0):
+            damageResult = damageTarget(target, attackChance, maxAttackDamage, critChance, attackType)
+            totalDamage += damageResult[1]
+            hitType = damageResult[0]
+        elif attackData.forceHitChance == True:
+            if random.randrange(100) >= attackChance:
+                hitType = 0
+        if hitType > 0:
+            # No miss if attack has damage
+            if attackData.mana != 0:
+                manaEffectTarget(target, attackData.mana)
+            if attackData.heal > 0:
+                totalHeal = healTarget(target, attackData.heal)
+            # Apply negative effects
+            if lastHit == True:
+                applyActiveEffects(target, attackData.active_effects)
+            renpy.play("audio/sfx/{}".format(attackData.sfx), channel='audio')
+            if hitType == 1:
+                # Standard animation
+                renpy.show_screen(attackData.animation, positions=[(target.x, target.y)], _tag='an_'+str(target.x)+str(target.y),_transient=True)
+            if hitType == 2:
+                # Crit animation
+                renpy.show_screen("crit", positions=[(target.x, target.y)], _tag='an_'+str(target.x)+str(target.y),_transient=True)
+        else:
+            renpy.show_screen("msg_effect", x=target.x, y=target.y, text="MISS", _tag='msg_'+str(target.x)+str(target.y), _transient=True)
+            renpy.play("audio/sfx/35_Miss_Evade_02.mp3", channel='audio')
+            renpy.show_screen("missedHit", positions=[(target.x, target.y)], _tag='an_'+str(target.x)+str(target.y),_transient=True)
+        return (totalDamage, totalHeal)
+
+    def damageTarget(target, attackChance, maxAttackDamage, critChance = 0, attackType = None):
+        hitType = 0 # 0 - miss | 1 - hit(at least one) | 2 - crit(at least one)
+        if random.randrange(100) < attackChance:
+            minAttackDamage = maxAttackDamage
+            if attackType == 'normal':
+                if target.defense > 0:
+                    minAttackDamage = int(maxAttackDamage - (maxAttackDamage * (target.defense / 100)))
+            if attackType == 'magic':
+                if target.magicDef > 0:
+                    minAttackDamage = int(maxAttackDamage - (maxAttackDamage * (target.magicDef / 100)))
+            damage = random.randrange(minAttackDamage, maxAttackDamage + 1)
+            if random.randrange(100) < critChance:
+                # crit hit. doubles the damage
+                damage = damage * 2
+                realDamage = damage if target.health > damage else target.health
+                target.health -= realDamage
+                renpy.show_screen("number_effect", x=target.x, y=target.y, val=realDamage, textColor="#ff1d1d", _tag='dam_'+str(target.x)+str(target.y), _transient=True)
+                return (2, damage)
+            else:
+                realDamage = damage if target.health > damage else target.health
+                target.health -= realDamage
+                renpy.show_screen("number_effect", x=target.x, y=target.y, val=realDamage, textColor="#ff1d1d", _tag='dam_'+str(target.x)+str(target.y), _transient=True)
                 return (1, damage)
-            else:
-                # apply status effects
-                return (1, 0)
-        else:
-            return (0, 0)
+        return (0, 0)
+    
+    def manaEffectTarget(target, mana):
+        if mana > 0:
+            missingMana = (target.baseMana - mana)
+            manaModifier = mana if mana < missingMana else missingMana
+            target.mana += manaModifier
+            renpy.show_screen("number_effect", x=target.x, y=target.y, val=manaModifier, textColor="#3bd5ff", _tag='man_'+str(target.x)+str(target.y), _transient=True)
+        elif mana < 0:
+            if (target.baseMana > 0) and (target.mana > 0):
+                absMana = abs(mana)
+                manaModifier = absMana if absMana < target.mana else target.mana
+                target.mana -= manaModifier
+                renpy.show_screen("number_effect", x=target.x, y=target.y, val=manaModifier, textColor="#803bff", _tag='men_'+str(target.x)+str(target.y), _transient=True)
 
-    def castMultiSpell(attackerTag, targetsTags, spellIndex):
-        # 100% chance of hit
-        # attack ignores defenses
-        attacker = combatChars[attackerTag]
-        attackerSpell = combatChars[attackerTag].spells[spellIndex]
-        if attackerSpell is not None:
-            spell = spellslib.spells[attackerSpell['tag']]
-            if spell.damage > 0:
-                damage = 0
-                weapon = None
-                if (attacker.hand is not None) and (itemslib.items[attacker.hand].weaponData['type'] == 'magic'):
-                    weapon = itemslib.items[attacker.hand]
-                if spell.magicType == 'old':
-                    damage = int(spell.damage * math.sqrt(attackerSpell['lvl']))
-                    attackerSpell['cd'] = spell.cooldown
-                else:
-                    if weapon is not None:
-                        damage = spell.damage + weapon.weaponData['damage']
-                totalDamage = 0
-                for targetTag in targetsTags:
-                    combatChars[targetTag].health -= damage
-                    totalDamage += damage
-                    if combatChars[targetTag].health < 0:
-                        combatChars[targetTag].health = 0
-                if weapon is not None:
-                    manaCost = spell.cost - weapon.weaponData['mana']
-                    if manaCost > 0:
-                        attacker.mana -= manaCost
-                else:
-                    attacker.mana -= spell.cost
-                return (1, totalDamage)
-            else:
-                # apply status effects
-                return (1, 0)
-        else:
-            return (0, 0)
+    def healTarget(target, heal):
+        targetMissingHealth = target.baseHealth - target.health
+        # Cap healing at target's max missing health
+        realHealing = heal if targetMissingHealth > heal else targetMissingHealth
+        target.health += realHealing
+        renpy.show_screen("number_effect", x=target.x, y=target.y, val=realHealing, textColor="#1dff25", _tag='heal_'+str(target.x)+str(target.y), _transient=True)
+        return realHealing
 
-    def reduceCooldown(tag, ammount = 1):
-        char = combatChars[tag]
-        if (char.spells[0] is not None) and (char.spells[0]['cd'] > 0):
-            char.spells[0]['cd'] -= ammount
-        if (char.spells[1] is not None) and (char.spells[1]['cd'] > 0):
-            char.spells[1]['cd'] -= ammount
+    def applyActiveEffects(target, active_effects):
+        for effectTag in active_effects:
+            # Add status effect to target or reset duration if already applied.
+            effect = effectsLib.effects[effectTag]
+            if (effectTag not in target.effects) or ((effectTag in target.effects) and (target.effects[effectTag] > -1)):
+                target.effects[effectTag] = effect.duration
+                if effect.instant_effect:
+                    effectsLib.triggerInstantEffect(target, effect)
+    
+    def reduceCooldown(tag, amount = 1):
+        char = arenaChars[tag]
+        for equipment in char.equipment:
+            if equipment is not None:
+                if (equipment.cd > 0):
+                    equipment.cd -= amount
 
         

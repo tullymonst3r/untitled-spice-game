@@ -1,0 +1,355 @@
+{
+    "punch": {
+        "name": "Punch", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "melee",
+            "damage": 1
+        }
+    },
+    "fists": {
+        "name": "Fists", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "melee",
+            "hits": 2,
+            "damage": 1
+        }
+    },
+    "kick": {
+        "name": "Kick", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "melee",
+            "damage": 1,
+            "finesse": 2
+        }
+    },
+    "meditation": {
+        "name": "Meditation", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "mp": 20
+        }
+    },
+    "fight_rush": {
+        "name": "Fight Rush", "description": "Grants 1 extra turn instantaneously but leaves the user exhausted.",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "base_cd": 5,
+            "active_effects": ["overclock"],
+            "sfx": "haste"
+        }
+    },
+    "earthshatter": {
+        "name": "Earthshatter", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemies",
+            "skill_type": "range",
+            "damage": 10,
+            "base_cd": 4,
+            "active_effects": ["stunned"]
+        }
+    },
+    "toughen_up": {
+        "name": "Toughen Up", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "damage": 10,
+            "base_cd": 2,
+            "active_effects": ["toughen"]
+        }
+    },
+    "gay_stick": {
+        "name": "Gay Stick", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "range",
+            "magic_type": "new",
+            "damage": 10,
+            "accuracy": 25,
+            "animation": "magicHit"
+        }
+    },
+    "mg42": {
+        "name": "MG42", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "range",
+            "damage": 20,
+            "accuracy": 25,
+            "finesse": 6,
+            "hits": 5
+        }
+    },
+    "floweringThorn": {
+        "name": "Flowering Thorn", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "melee",
+            "damage": 15,
+            "speed": -2,
+            "finesse": 30
+        }
+    },
+    "sageTs": {
+        "name": "Sage's Terrasphere", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "range",
+            "magic_type": "new",
+            "damage": 15,
+            "accuracy": 25,
+            "hits": 2,
+            "animation": "magicHit"
+        }
+    },
+    "forestBow": {
+        "name": "Forest Bow", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "range",
+            "damage": 45,
+            "accuracy": 25,
+            "finesse": 2
+        }
+    },
+    "stormBow": {
+        "name": "Storm Bow", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemies",
+            "skill_type": "range",
+            "damage": 20,
+            "accuracy": 15,
+            "hits": 2
+        }
+    },
+    "parsleyHammer": {
+        "name": "Parsley's Hammer", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "melee",
+            "damage": 15,
+            "speed": -3
+        }
+    },
+    "jannyWeapon": {
+        "name": "Janny's Ban Axe", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "melee",
+            "damage": 7,
+            "speed": -2
+        }
+    },
+    "jannyHammer": {
+        "name": "Janny's Ban Hammer", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "melee",
+            "damage": 10,
+            "speed": -4
+        }
+    },
+    "carawayTs": {
+        "name": "Caraway's Terrasphere", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "range",
+            "magic_type": "new",
+            "damage": 25,
+            "accuracy": 35,
+            "hits": 2,
+            "animation": "magicHit"
+        }
+    },
+    "thunderbolt": {
+        "name": "Thunderbolt", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "range",
+            "magic_type": "new",
+            "damage": 15,
+            "accuracy": 50,
+            "hits": 2,
+            "mp_cost": 20,
+            "animation": "magicHit",
+            "sfx": "thunder"
+        }
+    },
+    "boost": {
+        "name": "Boost", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "ally",
+            "skill_type": "special",
+            "magic_type": "new",
+            "mp": 20,
+            "mp_cost": 30,
+            "active_effects": ["haste", "power"],
+            "animation": "hex",
+            "sfx": "buff"
+        }
+    },
+    "fireball": {
+        "name": "Fireball", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "range",
+            "magic_type": "old",
+            "damage": 75,
+            "accuracy": 20,
+            "mp_cost": 15,
+            "base_cd": 2,
+            "active_effects": ["haste", "power"],
+            "animation": "fire",
+            "sfx": "fire_exp"
+        }
+    },
+    "curse": {
+        "name": "Curse", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "enemy",
+            "skill_type": "special",
+            "magic_type": "old",
+            "damage": 40,
+            "accuracy": 50,
+            "mp_cost": 15,
+            "base_cd": 2,
+            "active_effects": ["cursed"],
+            "animation": "hex",
+            "sfx": "def_debuff"
+        }
+    },
+    "hex": {
+        "name": "Hex", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "enemies",
+            "skill_type": "special",
+            "magic_type": "old",
+            "damage": 40,
+            "accuracy": 50,
+            "mp_cost": 25,
+            "base_cd": 3,
+            "active_effects": ["exposed", "slow"],
+            "animation": "hex",
+            "sfx": "debuff"
+        }
+    },
+    "healAlly": {
+        "name": "Heal", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "allies",
+            "skill_type": "special",
+            "magic_type": "old",
+            "heal": 30,
+            "mp_cost": 50,
+            "base_cd": 3,
+            "active_effects": ["regen"],
+            "animation": "hex",
+            "sfx": "heal"
+        }
+    },
+    "megaHeal": {
+        "name": "Spirit Healing", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "magic_type": "old",
+            "heal": 75,
+            "mp": 75,
+            "mp_cost": 75,
+            "base_cd": 4,
+            "active_effects": ["regen"],
+            "animation": "hex",
+            "sfx": "heal"
+        }
+    },
+    "forestGift": {
+        "name": "Forest's Gift", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "ally",
+            "skill_type": "special",
+            "magic_type": "old",
+            "mp_cost": 25,
+            "base_cd": 3,
+            "active_effects": ["accu"],
+            "animation": "hex",
+            "sfx": "buff"
+        }
+    },
+    "summonDemon": {
+        "name": "Summon Demon", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "magic_type": "old",
+            "mp_cost": 50,
+            "base_cd": 8,
+            "active_effects": ["accu"],
+            "animation": "hex",
+            "sfx": "summon",
+            "special_action": "summonDemon"
+        }
+    },
+    "transFallenJanny": {
+        "name": "Trans: Fallen Janny", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "magic_type": "old",
+            "mp_cost": 100,
+            "base_cd": 8,
+            "active_effects": ["accu"],
+            "animation": "hex",
+            "sfx": "summon",
+            "special_action": "transformTo",
+            "special_val": "fallenJanny"
+        }
+    },
+    "transDiamonGiant": {
+        "name": "Trans: Diamond Giant", "description": "",
+        "icon_name": "punch", "sp_price": 2,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "magic_type": "old",
+            "mp_cost": 100,
+            "base_cd": 8,
+            "active_effects": ["accu"],
+            "animation": "hex",
+            "sfx": "summon",
+            "special_action": "transformTo",
+            "special_val": "diamondGiant"
+        }
+    }
+}

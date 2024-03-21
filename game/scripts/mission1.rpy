@@ -3,12 +3,30 @@ define onion = Character("Onion Chives", color="#a39a64")
 
 init python:
     import copy
-    # import store.combatlib as combatlib
 
 label mission1:
     scene bg chives_home
-    show onion_chives at left
-    with move
+    # show onion_chives at left
+    # with move
+
+    "\[ You have entered in combat \]"
+    # Change to combat background
+    scene bg combat_field with Fade(0.5, 0, 0.5)
+
+    # Setting both teams for combat
+    $ allies = ['garlic']
+    $ enemies = ['janny']
+    $ combatants = (allies,enemies)
+    call combat(combatants) from _call_combat_4
+
+    if _return: # won last combat
+        # continue with scene if player won
+        garlic "I won!"
+    else:
+        # continue with scene if player lost
+        garlic "I lost :("
+    
+    return
 
     onion "My son."
 
@@ -85,7 +103,8 @@ label mission1:
         size 20
         color "#000000"
 
-    call screen select_class
+    jump touch_grass
+    # call screen select_class
 
     label choose_warrior:
         "You chose the Warrior class."
@@ -97,7 +116,7 @@ label mission1:
             # renpy.notify("+5 defense and strength")
             foundItem = itemslib.items['gay_sword']
             # combatGarlic.assignSlot(1, copy.deepcopy(foundItem))
-            # combatlib.updateCharsDict()
+            # combatLib.updateCharsDict()
         show screen item_card(foundItem)
         jump touch_grass
 
@@ -110,7 +129,7 @@ label mission1:
             # renpy.notify("+3 finesse")
             foundItem = itemslib.items['mg42']
             # combatGarlic.assignSlot(1, copy.deepcopy(foundItem))
-            # combatlib.updateCharsDict()
+            # combatLib.updateCharsDict()
         show screen item_card(foundItem)
         jump touch_grass
     
@@ -123,7 +142,7 @@ label mission1:
         python:
             foundItem = itemslib.items['root_hammer']
             # combatGarlic.assignSlot(1, copy.deepcopy(foundItem))
-            # combatlib.updateCharsDict()
+            # combatLib.updateCharsDict()
         show screen item_card(foundItem)
         jump touch_grass
 
@@ -136,15 +155,15 @@ label mission1:
             # renpy.notify("+10 mana")
             foundItem = itemslib.items['gay_stick']
             # combatGarlic.assignSlot(1, copy.deepcopy(foundItem))
-            # combatlib.updateCharsDict()
+            # combatLib.updateCharsDict()
         show screen item_card(foundItem)
         jump touch_grass
     
     label touch_grass:
 
-        "You acquired a new weapon."
+        # "You acquired a new weapon."
 
-        $ renpy.hide_screen("item_card")
+        # $ renpy.hide_screen("item_card")
 
         "Now go outside, you fucking dweeb."
 
@@ -173,7 +192,7 @@ label mission1:
         $ combatants = (allies,enemies) # set tuple (call statement only accepts one parameter)
         call combat(combatants) from _call_combat
 
-        if combatlib.wonLastCombat:
+        if _return: # won last combat
             # continue with scene if player won
             garlic "I won!"
         else:

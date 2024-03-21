@@ -1,0 +1,157 @@
+{
+    "garlic": {
+        "name": "Garlic", "sprite_name": "garlic_chives",
+        "base_hp": 100, "base_mp": 50, "base_strength": 18,
+        "base_defense": 20, "base_mag_defense": 10, "base_speed": 10,
+        "base_finesse": 4, "base_reflexes": 20, "base_accuracy": 15,
+        "equipped_skills": ["mg42", "gay_stick", "summonDemon", "hex"]
+    },
+    "rosemary": {
+        "name": "Rosemary", "sprite_name": "rosemary",
+        "base_hp": 100, "base_mp": 0, "base_strength": 25,
+        "base_defense": 15, "base_mag_defense": 0, "base_speed": 15,
+        "base_finesse": 2, "base_reflexes": 10, "base_accuracy": 7,
+        "equipped_skills": ["fists", "floweringThorn", "fight_rush", "kick"]
+    },
+    "sage": {
+        "name": "Sage", "sprite_name": "sage",
+        "base_hp": 70, "base_mp": 75, "base_strength": 9,
+        "base_defense": 10, "base_mag_defense": 25, "base_speed": 5,
+        "base_finesse": 2, "base_reflexes": 15, "base_accuracy": 15,
+        "equipped_skills": ["sageTs", "boost", "healAlly", "meditation"]
+    },
+    "thyme": {
+        "name": "Thyme", "sprite_name": "thyme",
+        "base_hp": 100, "base_mp": 30, "base_strength": 15,
+        "base_defense": 12, "base_mag_defense": 12, "base_speed": 10,
+        "base_finesse": 6, "base_reflexes": 20, "base_accuracy": 20,
+        "equipped_skills": ["forestBow", "stormBow", "forestGift", "fists"]
+    },
+    "parsley": {
+        "name": "Parsley", "sprite_name": "parsley",
+        "base_hp": 200, "base_mp": 0, "base_strength": 24,
+        "base_defense": 30, "base_mag_defense": 20, "base_speed": 5,
+        "base_finesse": 4, "base_reflexes": 10, "base_accuracy": 5,
+        "equipped_skills": ["parsleyHammer", "earthshatter", "toughen_up", "responsability"]
+    },
+
+    "demon": {
+        "name": "Demon", "sprite_name": "demon",
+        "base_hp": 200, "base_mp": 0, "base_strength": 25,
+        "base_defense": 75, "base_mag_defense": 0, "base_speed": 10,
+        "base_finesse": 8, "base_reflexes": 10, "base_accuracy": 0,
+        "equipped_skills": [
+            {
+                "name": "Slash",
+                "skill_data": { "target": "enemy" }
+            },
+            "curse",
+            {
+                "name": "Mist Form",
+                "skill_data": {
+                    "target": "self",
+                    "skill_type": "special",
+                    "active_effects": ["haste"]
+                }
+            },
+            {
+                "name": "Frenzy",
+                "skill_data": {
+                    "target": "enemies",
+                    "hits": 4,
+                    "finesse": -8
+                }
+            }
+        ],
+        "startup_effects": [
+            ["regen", 2, -1]
+        ]
+    },
+    "titan": {
+        "name": "Titan", "sprite_name": "titan",
+        "base_hp": 750, "base_mp": 0, "base_strength": 100,
+        "base_defense": 0, "base_mag_defense": 0, "base_speed": 0,
+        "base_finesse": 2, "base_reflexes": 0, "base_accuracy": 0,
+        "equipped_skills": [
+            {
+                "name": "Stomp",
+                "skill_data": { "target": "enemies" }
+            }
+        ]
+    },
+    "fallenJanny": {
+        "name": "Fallen Jannitor", "sprite_name": "fallen_janitor",
+        "base_hp": 450, "base_mp": 0, "base_strength": 20,
+        "base_defense": 25, "base_mag_defense": 25, "base_speed": 10,
+        "base_finesse": 20, "base_reflexes": 10, "base_accuracy": 0,
+        "equipped_skills": [
+            "punch",
+            {
+                "name": "Stomp",
+                "skill_data": { "target": "enemies", "finesse": -1 }
+            },
+            "jannyHammer",
+            {
+                "name": "Recharge",
+                "skill_data": { "target": "self", "skill_type": "special", "heal": 50 }
+            }
+        ]
+    },
+    "janny": {
+        "name": "Town Jannitor", "sprite_name": "town_janitor",
+        "base_hp": 200, "base_mp": 0, "base_strength": 10,
+        "base_defense": 15, "base_mag_defense": 15, "base_speed": 5,
+        "base_finesse": 2, "base_reflexes": 5, "base_accuracy": 0,
+        "equipped_skills": [
+            "punch",
+            {
+                "name": "Stomp",
+                "skill_data": { "target": "enemies", "finesse": -1 }
+            },
+            "jannyWeapon"
+        ]
+    },
+    "diamondGiant": {
+        "name": "Diamond Giant", "sprite_name": "diamon_giant",
+        "base_hp": 1000, "base_mp": 0, "base_strength": 50,
+        "base_defense": 85, "base_mag_defense": 85, "base_speed": 0,
+        "base_finesse": 0, "base_reflexes": 0, "base_accuracy": 0,
+        "equipped_skills": [
+            "punch",
+            {
+                "name": "Stomp",
+                "skill_data": { "target": "enemies", "damage": -25 }
+            }
+        ]
+    },
+    "tentacle": {
+        "name": "Tentacle", "sprite_name": "octo_tenta",
+        "base_hp": 200, "base_mp": 0, "base_strength": 15,
+        "base_defense": 40, "base_mag_defense": 5, "base_speed": 20,
+        "base_finesse": 4, "base_reflexes": 20, "base_accuracy": 0,
+        "equipped_skills": [
+            { "name": "Lash", "skill_data": { "target": "enemy" } },
+            { "name": "Swipe", "skill_data": { "target": "enemies", "damage": -5, "finesse": -4 } }
+        ],
+        "startup_teammate_preventive_effects": ["protect"]
+    },
+    "octopus": {
+        "name": "Octopus", "sprite_name": "octo_head",
+        "base_hp": 300, "base_mp": 0, "base_strength": 24,
+        "base_defense": 50, "base_mag_defense": 5, "base_speed": 10,
+        "base_finesse": 6, "base_reflexes": 10, "base_accuracy": 0,
+        "equipped_skills": [
+            { "name": "Bite", "skill_data": { "target": "enemy", "damage": 5, "finesse": 4 } },
+            { "name": "Shriek", "skill_data": { "target": "enemies", "skill_type": "range", "damage": 15, "accuracy": 25 } },
+            { "name": "Tentacle Swirl", "skill_data": { "target": "enemies", "finesse":-6, "damage": -15, "hits": 3 } },
+            { "name": "Ink Splash", "skill_data": { "target": "enemies", "skill_type": "range", "accuracy":7, "active_effects": ["slow"] } }
+        ]
+    },
+    "caraway": {
+        "name": "Caraway", "sprite_name": "caraway_s_combat",
+        "base_hp": 500, "base_mp": 0, "base_strength": 0,
+        "base_defense": 20, "base_mag_defense": 45, "base_speed": 25,
+        "base_finesse": 12, "base_reflexes": 25, "base_accuracy": 30, "base_turns": 3,
+        "equipped_skills": [ "carawayTs", "megaHeal", "boost", "transFallenJanny", "transDiamonGiant" ]
+    }
+}

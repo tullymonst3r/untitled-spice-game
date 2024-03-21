@@ -34,7 +34,7 @@ screen guardiansMenu():
                     xsize 700
                     yfill True
                     python:
-                        guardian = combatlib.combatChars[playerLib.selectedGuardian]
+                        guardian = combatLib.combatChars[playerLib.selectedGuardian]
                     vbox:
                         spacing 25
                         hbox:
@@ -127,7 +127,7 @@ screen guardiansMenu():
                                 spacing 30
                                 ysize 750
                                 for (guardian) in playerLib.guardians.items():
-                                    use regularBtn(combatlib.combatChars[guardian[0]].name, ('select', guardian[0]), guardian[0] == playerLib.selectedGuardian)
+                                    use regularBtn(combatLib.combatChars[guardian[0]].name, ('select', guardian[0]), guardian[0] == playerLib.selectedGuardian)
                     else:
                         if playerLib.selectedEquipmentType is None:
                             viewport:

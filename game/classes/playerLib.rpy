@@ -1,19 +1,13 @@
 init -6 python in playerLib:
     import copy
-    import store.combatlib as combatlib
+    import math
+    import store.combatLib as combatLib
     import store.itemslib as itemslib
     import store.spellslib as spellslib
-    party = ['garlic', None, None, None]
-    guardians = {
-        "garlic": True,
-        "rosemary": False,
-        "sage": False,
-        "thyme": False,
-        "parsley": False
-    }
-    gold = 0
-    inventory = ['mg42', 'gay_sword', 'gay_stick', 'root_hammer', 'floweringThorn', 'sageTs', 'forestBow', 'stormBow', 'parsleyHammer']
-    itemsInventory = {
+    import store.charsLib as charsLib
+
+    # gold = 0
+    inventory = {
         'smallHealPot': 100,
         'medHealPot': 50,
         'largeHealPot': 20,
@@ -22,110 +16,96 @@ init -6 python in playerLib:
         'largeManPot': 20,
         'giantTranPot': 1,
     }
-    selectedGuardian = None
-    selectedSlot = None
-    selectedEquipmentType = None
-    unsavedUpgrades = {
-        'baseHealth': 0,
-        'baseMana': 0,
-        'baseStrength': 0,
-        'baseDefense': 0,
-        'baseMagicDef': 0,
-        'baseSpeed': 0,
-        'baseAccuracy': 0,
-        'baseFinesse': 0
+    selected_guardian = None
+    selected_slot = None
+    unsaved_upgrades = {
+        'base_hp': 0,
+        'base_mp': 0,
+        'base_strength': 0,
+        'base_speed': 0,
+        'base_defense': 0,
+        'base_mag_defense': 0,
+        'base_reflexes': 0,
+        'base_accuracy': 0,
+        'base_finesse': 0
     }
-    upgradeableStats = {
-        'baseHealth': {'label': 'HP', 'jump': 20, 'max': 1000, 'color': "#b010a8"},
-        'baseMana': {'label': 'MP', 'jump': 5, 'max': 250, 'color': "#0fa0c1"},
-        'baseStrength': {'label': 'Str', 'jump': 3, 'max': 150, 'color': "#b68b09"},
-        'baseDefense': {'label': 'Def', 'jump': 2, 'max': 100, 'color': "#b68b09"},
-        'baseMagicDef': {'label': 'Mag Def', 'jump': 2, 'max': 100, 'color': "#b68b09"},
-        'baseSpeed': {'label': 'Spd', 'jump': 1, 'max': 50, 'color': "#b68b09"},
-        'baseAccuracy': {'label': 'Acu', 'jump': 1, 'max': 50, 'color': "#b68b09"},
-        'baseFinesse': {'label': 'Fin', 'jump': 1, 'max': 50, 'color': "#b68b09"}
+    upgradeable_stats = {
+        'base_hp': {'label': 'HP', 'jump': 20, 'max': 1000, 'color': "#ce1937ff"},
+        'base_mp': {'label': 'MP', 'jump': 5, 'max': 250, 'color': "#1e8cdbff"},
+        'base_defense': {'label': 'Defense', 'jump': 1, 'max': 100, 'color': "#b68b09"},
+        'base_mag_defense': {'label': 'Defense', 'jump': 1, 'max': 100, 'color': "#b68b09"},
+        'base_reflexes': {'label': 'Reflexes', 'jump': 1, 'max': 100, 'color': "#b68b09"},
+        'base_speed': {'label': 'Speed', 'jump': 1, 'max': 100, 'color': "#b68b09"},
+        'base_strength': {'label': 'Strength', 'jump': 2, 'max': 100, 'color': "#b68b09"},
+        'base_accuracy': {'label': 'Accuracy', 'jump': 1, 'max': 100, 'color': "#b68b09"},
+        'base_finesse': {'label': 'Fin', 'jump': 1, 'max': 50, 'color': "#b68b09"}
     }
-    upgradesAvailable = 0
 
-    def removePartyMember(index):
-        global party, guardians
-        charTag = party[index]
-        if charTag in guardians:
-            guardians[charTag] = False
-        party[index] = None
-        party = party
+    sp_available = 0
 
-    def addPartyMember(charTag):
-        global party, guardians
-        for (index, slot) in enumerate(party):
-            if slot is None:
-                party[index] = charTag
-                break
-        guardians[charTag] = True
-        guardians = guardians
+    
+    unlocked_skills=["mg42", "gay_stick", "summonDemon", "hex", "curse", "fireball", "thunderbolt", "summonDemon", "fists", "kick", "meditation"]
+    level=1
+    xp=0
+    sp=0
 
-    def isPartySlotAvailable():
-        available = False
-        for slot in party:
-            if slot is None:
-                available = True
-                break
-        return available
+    def gainXp(gained_xp):
+        global xp, level, sp
+        has_leveled_up = False
+        can_level_up = True
+        xp += gained_xp
+        while can_level_up:
+            req_exp = 100
+            if level > 1: req_exp =  int(pow(100, 1 + (((level + 1)/10) - 0.1)))
+            if xp >= req_exp:
+                level += 1
+                sp += int(( 0.8 * math.sqrt(level) ) + 0.5)
+                has_leveled_up = True
+                xp = xp - req_exp
+            else:
+                can_level_up = False
+        return has_leveled_up
+
+
 
     def selectGuardianToInspect(charTag):
-        global selectedGuardian
-        # combatlib.combatChars[charTag].calcTerrasphereStats()
-        selectedGuardian = charTag
+        global selected_guardian
+        # combatLib.combatChars[charTag].calcTerrasphereStats()
+        selected_guardian = charTag
     def selectSlot(index):
-        global selectedEquipmentType, selectedSlot
-        selectedEquipmentType = None
-        selectedSlot = index
+        global selected_slot
+        selected_slot = index
     def unassignSlot():
-        if (selectedGuardian is not None) and (selectedSlot is not None):
-            char = combatlib.combatChars[selectedGuardian]
-            char.assignSlot(selectedSlot, None)
+        if (selected_guardian is not None) and (selected_slot is not None):
+            char = combatLib.combatChars[selected_guardian]
+            char.assignSlot(selected_slot, None)
     def assignSlot(equipment):
-        if (selectedGuardian is not None) and (selectedSlot is not None):
-            char = combatlib.combatChars[selectedGuardian]
-            char.assignSlot(selectedSlot, equipment)
+        if (selected_guardian is not None) and (selected_slot is not None):
+            char = combatLib.combatChars[selected_guardian]
+            char.assignSlot(selected_slot, equipment)
     def selectAssignEquipment(equipment):
         global selectedEquipmentType
         selectedEquipmentType = equipment
 
-    def availableWeapons():
-        global inventory
-        availableItems = []
-        weaponTypes = ['melee','range','magic']
-        for itemTag in inventory:
-            item = itemslib.items[itemTag]
-            if (item.equipped == False) and (item.weaponType in weaponTypes):
-                availableItems.append(item)
-        return availableItems
-    def availableSpells(charSpells):
-        availableSpells = []
-        for spellTuple in charSpells.items():
-            if spellTuple[1] == False:
-                availableSpells.append(spellslib.spells[spellTuple[0]])
-        return availableSpells
-    def availableAttacks(charAttacks):
-        availableAttacks = []
-        for attackTuple in charAttacks.items():
-            if attackTuple[1] == False:
-                availableAttacks.append(combatlib.attacks[attackTuple[0]])
-        return availableAttacks
+
+    def availableSkills():
+        return []
 
     def resetUnsavedUpgrades(upgrades):
-        global upgradesAvailable, upgradeableStats, unsavedUpgrades
-        upgradesAvailable = upgrades
-        for stat in upgradeableStats.keys():
-            unsavedUpgrades[stat] = 0
+        global sp_available, upgradeable_stats, unsaved_upgrades
+        sp_available = upgrades
+        for stat in upgradeable_stats.keys():
+            unsaved_upgrades[stat] = 0
     def saveUpgrades():
-        global selectedGuardian, unsavedUpgrades, upgradesAvailable
-        char = combatlib.combatChars[selectedGuardian]
-        char.upgrades = char.upgrades - (char.upgrades - upgradesAvailable)
-        for upgrade in unsavedUpgrades.items():
+        global selected_guardian, unsaved_upgrades, sp_available
+        char = combatLib.combatChars[selected_guardian]
+        char.upgrades = char.upgrades - (char.upgrades - sp_available)
+        for upgrade in unsaved_upgrades.items():
             if upgrade[1] > 0:
                 setattr(char, upgrade[0], getattr(char, upgrade[0]) + upgrade[1])
         resetUnsavedUpgrades(0)
 
-    selectedGuardian = 'garlic'
+    selected_guardian = 'garlic'
+    # Load Garlic:
+    if 'garlic' not in charsLib.chars: charsLib.addPlayableChar("garlic")
+    

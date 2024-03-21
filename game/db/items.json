@@ -1,0 +1,44 @@
+{
+    "smallHealPot": {
+        "name": "Small Hp Potion", "skill_data": {
+            "target": "ally", "skill_type": "special", "sfx": "heal",
+            "heal": 20
+        }
+    },
+    "medHealPot": {
+        "name": "Medium Hp Potion", "skill_data": {
+            "target": "ally", "skill_type": "special", "sfx": "heal",
+            "heal": 50
+        }
+    },
+    "largeHealPot": {
+        "name": "Large Hp Potion", "skill_data": {
+            "target": "ally", "skill_type": "special", "sfx": "heal",
+            "heal": 100
+        }
+    },
+    "smallManPot": {
+        "name": "Medium Mp Potion", "skill_data": {
+            "target": "ally", "skill_type": "special", "sfx": "heal",
+            "mp": 20
+        }
+    },
+    "medManPot": {
+        "name": "Small Mp Potion", "skill_data": {
+            "target": "ally", "skill_type": "special", "sfx": "heal",
+            "mp": 50
+        }
+    },
+    "largeManPot": {
+        "name": "Large Mp Potion", "skill_data": {
+            "target": "ally", "skill_type": "special", "sfx": "heal",
+            "mp": 10
+        }
+    },
+    "giantTranPot": {
+        "name": "Trans Potion: Giant", "description": "Transform into a powerful giant for 4 rounds.", "skill_data": {
+            "target": "self", "skill_type": "special", "vfx": "magicHit", "sfx": "buff",
+            "special_action": "transformTo", "special_val": "titan"
+        }
+    }
+}

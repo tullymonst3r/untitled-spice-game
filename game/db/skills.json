@@ -1,11 +1,21 @@
 {
+    "recover": {
+        "name": "Recover", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "heal": 10,
+            "mp": 10,
+            "sfx": "heal"
+        }
+    },
     "punch": {
         "name": "Punch", "description": "",
         "icon_name": "punch", "sp_price": 0,
         "skill_data": {
             "target": "enemy",
-            "skill_type": "melee",
-            "damage": 1
+            "skill_type": "melee"
         }
     },
     "fists": {
@@ -14,8 +24,7 @@
         "skill_data": {
             "target": "enemy",
             "skill_type": "melee",
-            "hits": 2,
-            "damage": 1
+            "hits": 2
         }
     },
     "kick": {
@@ -24,7 +33,6 @@
         "skill_data": {
             "target": "enemy",
             "skill_type": "melee",
-            "damage": 1,
             "finesse": 2
         }
     },
@@ -56,6 +64,7 @@
             "skill_type": "range",
             "damage": 10,
             "base_cd": 4,
+            "low_chance": true,
             "active_effects": ["stunned"]
         }
     },
@@ -65,9 +74,19 @@
         "skill_data": {
             "target": "self",
             "skill_type": "special",
-            "damage": 10,
             "base_cd": 2,
             "active_effects": ["toughen"]
+        }
+    },
+    "responsability": {
+        "name": "Sense of Responsability", "description": "",
+        "icon_name": "punch", "sp_price": 0,
+        "skill_data": {
+            "target": "self",
+            "skill_type": "special",
+            "base_cd": 3,
+            "quick_action": true,
+            "preventive_effects": ["protect"]
         }
     },
     "gay_stick": {
@@ -224,7 +243,6 @@
             "mp_cost": 15,
             "base_cd": 2,
             "active_effects": ["haste", "power"],
-            "animation": "fire",
             "sfx": "fire_exp"
         }
     },
@@ -317,7 +335,8 @@
             "active_effects": ["accu"],
             "animation": "hex",
             "sfx": "summon",
-            "special_action": "summonDemon"
+            "special_action": "summonEntity",
+            "special_val": "demon"
         }
     },
     "transFallenJanny": {

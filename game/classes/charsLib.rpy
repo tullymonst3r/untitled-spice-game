@@ -1,5 +1,6 @@
 init -8 python in charsLib:
     import store.playerLib as playerLib
+    import store.effectsLib as effectsLib
     import store.skillsLib as skillsLib
     import math
     import copy
@@ -13,39 +14,44 @@ init -8 python in charsLib:
         if tag in chars:
             char_object = copy.deepcopy(chars[tag])
         else:
-            chars_json = open(renpy.config.gamedir + "/lib/chars.json", "r")
+            chars_json = open(renpy.config.gamedir + "/db/characters.json", "r")
             loaded_chars = json.load(chars_json)
             char = loaded_chars[tag]
             chars_json.close()
-            char_object = copy.deepcopy(Char(**char))
+            char_object = copy.deepcopy(Char(tag=tag,**char))
             if ("equipped_skills" in char):
-                for (index, skill_tag) in enumerate(char['equipped_skills']): char_object.skills[index] = skillsLib.getSkill(skill_tag)
+                for (index, skill) in enumerate(char['equipped_skills']):
+                    if isinstance(skill, str):
+                        # char_object.skills[index] = skillsLib.getSkill(skill)
+                        char_object.skills.append(skillsLib.getSkill(skill))
+                    else:
+                        # char_object.skills[index] = skillsLib.Skill(tag="temp", **skill)
+                        char_object.skills.append(skillsLib.Skill(tag="temp", **skill))
+            if ('startup_effects' in char): effectsLib.applyEffects(char_object, char['startup_effects'])
+            if ('startup_teammate_preventive_effects' in char): effectsLib.applyTeammatePreventiveEffects(char_object, char['startup_teammate_preventive_effects'])
         if is_playable is not None: char_object.is_playable = is_playable
         return char_object
 
     def addPlayableChar(tag):
         global chars
-        chars_json = open(renpy.config.gamedir + "/lib/chars.json", "r")
+        chars_json = open(renpy.config.gamedir + "/db/characters.json", "r")
         loaded_chars = json.load(chars_json)
         char = loaded_chars[tag]
         chars_json.close()
-        char_object = Char(**char, is_playable=True)
-        chars[char['tag']] = char_object
-        unlocked_skills = []
+        char_object = Char(tag=tag, **char, is_playable=True)
+        chars[tag] = char_object
         if ("equipped_skills" in char):
             for (index, skill_tag) in enumerate(char['equipped_skills']):
-                unlocked_skills.append(skill_tag)
-                char_object.skills[index] = skillsLib.getSkill(skill_tag)
-        if ("unlocked_skills" in char):
-            for skill_tag in char['unlocked_skills']: unlocked_skills.append(skill_tag)
-        follower_stats = playerLib.FollowerStats(**char, skills=unlocked_skills)
-        chars[char['tag']] = char_object
+                char_object.skills.append(skillsLib.getSkill(skill_tag))
+                # char_object.skills[index] = skillsLib.getSkill(skill_tag)
+        if ('startup_effects' in char): effectsLib.applyEffects(char_object, char['startup_effects'])
+        chars[tag] = char_object
 
     class Char(object):
         x: int = 0
         y: int = 0
         zorder: int = 0
-        sprite_anim = 'idle'
+        sprite_state = 'idle'
         damage_done = 0
         heal_done = 0
         summoned_by = None # Tag of the character that summoned it.
@@ -66,7 +72,7 @@ init -8 python in charsLib:
             self.base_defense = kwargs.get('base_defense', 0) # % of damage mitigated (Minimum damage possible) TODO: Too OP at late game. Need rework
             self.defense = self.base_defense
             self.base_mag_defense = kwargs.get('base_mag_defense', 0) # % of damage mitigated (Minimum damage possible) TODO: Too OP at late game. Need rework
-            self.mag_defense = self.base_defense
+            self.mag_defense = self.base_mag_defense
             self.base_reflexes = kwargs.get('base_reflexes', 0) # Increases chances of dodging attacks. Increases chances of hitting melee attacks.
             self.reflexes = self.base_reflexes
             self.base_strength = kwargs.get('base_strength', 0) # Increases damage of all melee attacks
@@ -80,10 +86,11 @@ init -8 python in charsLib:
             
             self.is_playable = kwargs.get('is_playable', False)
 
+            self.teammate_preventive_effects = kwargs.get('teammate_preventive_effects', [])
             self.preventive_effects = kwargs.get('preventive_effects', [])
             self.effects = kwargs.get('effects', [])
             
-            self.skills = kwargs.get('skills', [None, None, None, None])
+            self.skills = kwargs.get('skills', [])
             
             self.loot = kwargs.get('loot', {})
             # self.gold = kwargs.get('gold', 0)
@@ -123,17 +130,24 @@ init -8 python in charsLib:
                 self.hp = self.base_hp
                 renpy.show_screen("float_num", x=self.x, y=self.y, val=real_heal, textColor="#1dff25", _tag='heal_'+str(self.x)+str(self.y), _transient=True)
                 return real_heal
-        def hurt(self, damage, ignore_defense = False):
+        def hurt(self, damage, is_magic_attack = False, ignore_defense = False):
             remaining_damage = damage
             real_damage = 0
             blocked = False
             # TODO: Should negative defense increase the damage?
-            if (self.defense > 0) and (not ignore_defense):
-                reduced_damage = random.randrange(0, int(self.base_hp * (self.defense / 100)))
-                remaining_damage -= reduced_damage
-                if remaining_damage < 0:
-                    remaining_damage = 0
-                # remaining_damage = int(remaining_damage - (remaining_damage * (self.defense / 100)))
+            if (not ignore_defense):
+                if (not is_magic_attack) and (self.defense > 0):
+                    # reduced_damage = random.randrange(0, int(self.base_hp * (self.defense / 100)))
+                    reduced_damage = random.randrange(0, int(remaining_damage - (remaining_damage * (self.defense / 100))))
+                    remaining_damage -= reduced_damage
+                    if remaining_damage < 0:
+                        remaining_damage = 0
+                elif (is_magic_attack) and (self.mag_defense > 0):
+                    # reduced_damage = random.randrange(0, int(self.base_hp * (self.mag_defense / 100)))
+                    reduced_damage = random.randrange(0, int(remaining_damage - (remaining_damage * (self.mag_defense / 100))))
+                    remaining_damage -= reduced_damage
+                    if remaining_damage < 0:
+                        remaining_damage = 0
             if remaining_damage > 0:
                 if self.hp > 0:
                     if self.hp > remaining_damage:
@@ -161,21 +175,5 @@ init -8 python in charsLib:
         char.strength = char.base_strength
         char.accuracy = char.base_accuracy
         char.finesse = char.base_finesse
-
-    def gainXp(char_follower, xp):
-        has_leveled_up = False
-        can_level_up = True
-        char_follower.xp += xp
-        while can_level_up:
-            req_exp = 100
-            if char_follower.level > 1: req_exp =  int(pow(100, 1 + (((char_follower.level + 1)/10) - 0.1)))
-            if char_follower.xp >= req_exp:
-                char_follower.level += 1
-                char_follower.sp += int(( 0.8 * math.sqrt(char_follower.level) ) + 0.5)
-                has_leveled_up = True
-                char_follower.xp = char_follower.xp - req_exp
-            else:
-                can_level_up = False
-        return has_leveled_up
     
 

@@ -16,7 +16,7 @@ screen partyMenu():
                         yspacing 30
                         for (index, slot) in enumerate(playerLib.party):
                             if slot is not None:
-                                use regularBtn(combatlib.combatChars[slot].name, ('remove', index))
+                                use regularBtn(combatLib.combatChars[slot].name, ('remove', index))
                             else:
                                 use regularBtn('', ('remove', index))
                 frame:
@@ -31,7 +31,7 @@ screen partyMenu():
                             ysize 750
                             for (guardian) in playerLib.guardians.items():
                                 if (guardian[1] == False):
-                                    use regularBtn(combatlib.combatChars[guardian[0]].name, ('add', guardian[0]), not playerLib.isPartySlotAvailable())
+                                    use regularBtn(combatLib.combatChars[guardian[0]].name, ('add', guardian[0]), not playerLib.isPartySlotAvailable())
         hbox:
             spacing 15
             align (0.5, 0.95)

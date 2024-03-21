@@ -1,0 +1,8 @@
+{
+    "protect": {
+        "name": "Protect", "duration": 3,
+        "description": "%30 of protecting allies from individual attacks.",
+        "chance": 30, "action_fcn": "protectTeammate",
+        "remove_fcn": "detransform"
+    }
+}

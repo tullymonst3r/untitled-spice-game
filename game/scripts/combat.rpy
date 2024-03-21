@@ -1,53 +1,48 @@
 ﻿init python:
-    import random
-    import store.itemslib as itemslib
-    import store.combatlib as combatlib
-    import store.spellslib as spellslib
-    import store.effectsLib as effectsLib
-
     def checkTeamHealths():
-        enemiesHp = 0
-        for enemyMember in combatlib.enemies:
-            if enemyMember is not None:
-                enemiesHp += combatlib.arenaChars[enemyMember].health
-                if enemyMember in combatlib.enemies:
-                    if combatlib.arenaChars[enemyMember].health < 1:
-                        tag = str(combatlib.arenaChars[enemyMember].x) + str(combatlib.arenaChars[enemyMember].y)
-                        renpy.pause(0.7)
-                        renpy.hide_screen(tag)
-                        renpy.hide_screen("status_"+tag)
-                        index = combatlib.enemies.index(enemyMember)
-                        combatlib.enemies[index] = None
-                        index = combatlib.arenaTags.index(enemyMember)
-                        combatlib.arenaTags[index] = None
-                        index = combatlib.enemiesAlive.index(enemyMember)
-                        del combatlib.enemiesAlive[index]
-                        renpy.play("audio/sfx/69_Enemy_death_01.mp3", channel='audio')
-        alliesHp = 0
-        for alliesMember in combatlib.allies:
-            if alliesMember is not None:
-                alliesHp += combatlib.arenaChars[alliesMember].health
-                if alliesMember in combatlib.allies:
-                    if combatlib.arenaChars[alliesMember].health < 1:
-                        tag = str(combatlib.arenaChars[alliesMember].x) + str(combatlib.arenaChars[alliesMember].y)
-                        renpy.pause(0.7)
-                        renpy.hide_screen(tag)
-                        renpy.hide_screen("status_"+tag)
-                        index = combatlib.allies.index(alliesMember)
-                        combatlib.allies[index] = None
-                        index = combatlib.arenaTags.index(alliesMember)
-                        combatlib.arenaTags[index] = None
-                        index = combatlib.alliesAlive.index(alliesMember)
-                        del combatlib.alliesAlive[index]
-                        renpy.play("audio/sfx/69_Enemy_death_01.mp3", channel='audio')
-        return (enemiesHp, alliesHp)
+        enemies_hp = 0
+        for char_tag in combatLib.enemies:
+            if char_tag is not None:
+                char = combatLib.arena[char_tag]
+                enemies_hp += char.hp
+                if char.hp < 1:
+                    xy_tag = str(char.x) + str(char.y)
+                    renpy.pause(0.5)
+                    renpy.hide_screen(xy_tag)
+                    renpy.hide_screen("status_"+xy_tag)
+                    index = combatLib.enemies.index(char_tag)
+                    combatLib.enemies[index] = None
+                    index = combatLib.arena_tags.index(char_tag)
+                    combatLib.arena_tags[index] = None
+                    index = combatLib.enemies_alive.index(char_tag)
+                    del combatLib.enemies_alive[index]
+                    renpy.play("audio/sfx/char_death.mp3", channel='audio')
+        allies_hp = 0
+        for char_tag in combatLib.allies:
+            if char_tag is not None:
+                char = combatLib.arena[char_tag]
+                allies_hp += char.hp
+                if char.hp < 1:
+                    xy_tag = str(char.x) + str(char.y)
+                    renpy.pause(0.5)
+                    renpy.hide_screen(xy_tag)
+                    renpy.hide_screen("status_"+xy_tag)
+                    index = combatLib.allies.index(char_tag)
+                    combatLib.allies[index] = None
+                    index = combatLib.arena_tags.index(char_tag)
+                    combatLib.arena_tags[index] = None
+                    index = combatLib.allies_alive.index(char_tag)
+                    del combatLib.allies_alive[index]
+                    renpy.play("audio/sfx/char_death.mp3", channel='audio')
+        return (enemies_hp, allies_hp)
     
-    def roundManaRecharge(attacker):
-        if attacker.baseMana > 0:
-            if attacker.mana < attacker.baseMana:
-                attacker.mana += 10
-            if attacker.mana > attacker.baseMana:
-                attacker.mana = attacker.baseMana
+    def selectTargets(in_list, random = False):
+        targets = []
+        for char in list(combatLib.arena.values()):
+            if char.tag in in_list: targets.append(char)
+        if random:
+            return renpy.random.choice(targets)
+        return targets
 
 label combat(combatants=([],[])):
     window hide  # Hide the window and quick menu while in combat
@@ -55,20 +50,16 @@ label combat(combatants=([],[])):
 
     python:
         # startup battle
-        combatlib.wonLastCombat = False
-        combatlib.resetChars(combatants[0])
-        combatlib.resetChars(combatants[1])
-        combatlib.resetArena()
+        won_combat = False
+        combatLib.resetArena()
 
-        # set player's allies sprites and total allies's health for lose condition
-        alliesHp = 0
-        for (i, alliesMember) in enumerate(combatants[0]):
-            if alliesMember is not None:
-                newTag = alliesMember + str(i)
-                combatlib.addCharacterToArena(alliesMember, newTag)
-                combatlib.allies.append(newTag)
-                combatlib.arenaTags.append(newTag)
-                combatlib.arenaChars[newTag].calcTerrasphereStats()
+        # set player's allies sprites and total allies's hp for lose condition
+        total_char_count = 0
+        for (i, char_tag) in enumerate(combatants[0]):
+            if char_tag is not None:
+                newTag = char_tag + str(total_char_count)
+                combatLib.addCharacterToArena(char_tag, newTag, is_playable=True)
+                combatLib.allies.append(newTag)
                 # TODO: Automate the position of the sprites to allow more than 4
                 if i == 0:
                     x = 700
@@ -90,24 +81,22 @@ label combat(combatants=([],[])):
                     x = 0
                     y = 0
                     zorder = -6
-                combatlib.arenaChars[newTag].x = x
-                combatlib.arenaChars[newTag].y = y
-                combatlib.arenaChars[newTag].zorder = zorder
-                renpy.show_screen("char_sprite", _tag=str(x) + str(y), char=combatlib.arenaChars[newTag], _zorder=zorder)
-                renpy.show_screen("charStatus", _tag="status_"+str(x)+str(y), char=combatlib.arenaChars[newTag])
+                combatLib.arena[newTag].x = x
+                combatLib.arena[newTag].y = y
+                combatLib.arena[newTag].zorder = zorder
+                renpy.show_screen("char_sprite", _tag=str(x) + str(y), char=combatLib.arena[newTag], _zorder=zorder)
+                renpy.show_screen("char_status", _tag="status_"+str(x)+str(y), char=combatLib.arena[newTag])
+                total_char_count += 1
                 # cap at 4 members on each team
                 if i == 4:
                     break
-        combatlib.alliesAlive = combatlib.allies.copy()
-        # set enemies' allies sprites and total enemies' health for win condition
-        enemiesHp = 0
-        for (i, enemyMember) in enumerate(combatants[1]):
-            if enemyMember is not None:
-                newTag = enemyMember + str(i)
-                combatlib.addCharacterToArena(enemyMember, newTag)
-                combatlib.enemies.append(newTag)
-                combatlib.arenaTags.append(newTag)
-                combatlib.arenaChars[newTag].calcTerrasphereStats()
+        combatLib.allies_alive = combatLib.allies.copy()
+        # set enemies' allies sprites and total enemies' hp for win condition
+        for (i, char_tag) in enumerate(combatants[1]):
+            if char_tag is not None:
+                newTag = char_tag + str(total_char_count)
+                combatLib.addCharacterToArena(char_tag, newTag)
+                combatLib.enemies.append(newTag)
                 if i == 0:
                     x = 1300
                     y = 700
@@ -128,50 +117,52 @@ label combat(combatants=([],[])):
                     x = 0
                     y = 0
                     zorder = -6
-                combatlib.arenaChars[newTag].x = x
-                combatlib.arenaChars[newTag].y = y
-                combatlib.arenaChars[newTag].zorder = zorder
-                renpy.show_screen("char_sprite", _tag=str(x) + str(y), char=combatlib.arenaChars[newTag], _zorder=zorder)
-                renpy.show_screen("charStatus", _tag="status_"+str(x)+str(y), char=combatlib.arenaChars[newTag])
+                combatLib.arena[newTag].x = x
+                combatLib.arena[newTag].y = y
+                combatLib.arena[newTag].zorder = zorder
+                renpy.show_screen("char_sprite", _tag=str(x) + str(y), char=combatLib.arena[newTag], _zorder=zorder)
+                renpy.show_screen("char_status", _tag="status_"+str(x)+str(y), char=combatLib.arena[newTag])
+                total_char_count += 1
                 # cap at 4 members on each team
                 if i == 4:
                     break
-        combatlib.enemiesAlive = combatlib.enemies.copy()
-        combatlib.arenaTags = combatlib.arenaTags
-        combatlib.enemies = combatlib.enemies
-        combatlib.allies = combatlib.allies
-        defaultEnemies = combatlib.enemies.copy()
+        combatLib.enemies_alive = combatLib.enemies.copy()
+        combatLib.arena_tags = combatLib.arena_tags
+        combatLib.enemies = combatLib.enemies
+        combatLib.allies = combatLib.allies
+        defaultEnemies = combatLib.enemies.copy()
 
     play music "audio/Just Roll on Your Back.mp3"
 
     label combatLoop:
         $ i = 0
+        stop sound
         jump charactersCycle
         label charactersCycle:
             $ renpy.hide_screen("actions_box")
             $ renpy.hide_screen("select_item")
             $ renpy.hide_screen("confirm_escape")
-            $ attackerTag = combatlib.arenaTags[i]
-            if attackerTag is None:
+            $ attacker_tag = combatLib.arena_tags[i]
+            if attacker_tag is None:
                 # dead char
                 $ i += 1
-                if i < len(combatlib.arenaTags):
+                if i < len(combatLib.arena_tags):
                     jump charactersCycle
                 else:
                     jump combatLoop
-            $ attacker = combatlib.arenaChars[attackerTag]
-            $ effectsLib.triggerRoundEffects(attacker)
-            if attacker.health > 0:
+            $ attacker = combatLib.arena[attacker_tag]
+            $ effectsLib.triggerEffects(attacker, effect_activation='passive', is_start_round=True)
+            if attacker.hp > 0:
                 jump characterTurn
             else:
                 jump endCharacterTurn         
             label characterTurn:
                 show screen current_turn(x=attacker.x, y=attacker.y)
-                $ playerLib.selectedGuardian = attackerTag
-                $ isAlly = attackerTag in combatlib.allies
-                $ isPlayableAlly = (attacker.isPlayable) and (isAlly)
-                $ combatlib.reduceCooldown(attackerTag)
-                $ roundManaRecharge(attacker)
+                $ playerLib.selected_guardian = attacker_tag
+                $ is_ally = attacker_tag in combatLib.allies
+                $ is_playable_ally = (attacker.is_playable) and (is_ally)
+                $ attacker.reduceCooldowns()
+                $ attacker.regenRound()
                 $ turns = 0
                 if attacker.turns > 0:
                     jump multipleTurnsCycle
@@ -179,209 +170,226 @@ label combat(combatants=([],[])):
                     jump endCharacterAction
 
                 label multipleTurnsCycle:
-                    if i < len(combatlib.arenaTags):
-                        if attackerTag != combatlib.arenaTags[i]:
+                    if i < len(combatLib.arena_tags):
+                        if attacker_tag != combatLib.arena_tags[i]:
                             # Attacker used transformation ability
-                            $ attackerTag = combatlib.arenaTags[i]
-                            $ attacker = combatlib.arenaChars[attackerTag]
-                    $ attackName = 'undefined'
-                    $ targetText = ''
-                    $ equipment = None
-                    $ attackData = None
-                    $ selectionEnded = False
+                            $ attacker_tag = combatLib.arena_tags[i]
+                            $ attacker = combatLib.arena[attacker_tag]
+                    $ attack_name = 'undefined'
+                    $ target_text = ''
+                    $ skill = None
+                    $ skill_data = None
                     jump actionSelection
                     
 
                     label actionSelection:
-                        if isPlayableAlly:
+                        if is_playable_ally:
                             call screen actions_box(attacker)
                             $ renpy.hide_screen("actions_box")
                             if _return:
                                 # Attack selected
-                                $ equipment = _return
+                                $ skill = _return
                                 jump targetSelection
+                            else:
+                                jump actionSelection
                         else:
                             # TODO: Filter attacks when on cd or mana is not enough
                             python:
-                                availableEquipments = []
-                                for equipment in attacker.equipment:
-                                    if equipment is not None:
-                                        availableEquipments.append(equipment)
-                            $ equipment = availableEquipments[random.randrange(0, len(availableEquipments))]
+                                available_skills = []
+                                for skill in attacker.skills:
+                                    if skill is not None:
+                                        available_skills.append(skill)
+                            if len(available_skills) == 0:
+                                $ skill = skillsLib.getSkill('recover')
+                            else:
+                                $ skill = available_skills[random.randrange(0, len(available_skills))]
                             jump targetSelection
                     label itemSelection:
                         call screen select_item()
                         $ renpy.hide_screen("select_item")
                         if _return:
-                            $ equipment = _return
+                            $ skill = _return
                             jump targetSelection
+                        else:
+                            jump itemSelection
                     label confirmEscape:
                         call screen confirm_escape()
                     label targetSelection:
-                        if equipment is not None:
-                            $ attackData = equipment.attackData
-                            $ attackName = equipment.name
-                        if attackData is not None:
+                        if skill is not None:
+                            $ skill_data = skill.skill_data
+                            $ attack_name = skill.name
+                        if skill_data is not None:
                             $ targets = []
-                            $ verb = attackData.verb
-                            if attackData.target == 'enemy':
-                                if isPlayableAlly:
-                                    call screen selection_sprite_enemy
+                            if skill_data.target == 'enemy':
+                                if is_playable_ally:
+                                    call screen select_target(combatLib.enemies_alive, 'enemy')
                                     if _return:
                                         $ targets.append(_return)
                                 else:
-                                    if isAlly:
-                                        $ targets.append(renpy.random.choice(combatlib.enemiesAlive))
+                                    if is_ally:
+                                        $ targets.append(selectTargets(combatLib.enemies_alive, True))
                                     else:
-                                        $ targets.append(renpy.random.choice(combatlib.alliesAlive))
-                            elif attackData.target == 'enemies':
-                                if isPlayableAlly:
-                                    call screen selection_sprite_enemies
-                                    $ targets = combatlib.enemiesAlive.copy()
+                                        $ targets.append(selectTargets(combatLib.allies_alive, True))
+                            elif skill_data.target == 'enemies':
+                                if is_playable_ally:
+                                    call screen select_target(combatLib.enemies_alive, 'enemy', True)
+                                    $ targets = selectTargets(combatLib.enemies_alive)
                                 else:
-                                    if isAlly:
-                                        $ targets = combatlib.enemiesAlive.copy()
+                                    if is_ally:
+                                        $ targets = selectTargets(combatLib.enemies_alive)
                                     else:
-                                        $ targets = combatlib.alliesAlive.copy()
-                            elif attackData.target == 'ally':
-                                if isPlayableAlly:
-                                    call screen selection_sprite_ally
+                                        $ targets = selectTargets(combatLib.allies_alive)
+                            elif skill_data.target == 'ally':
+                                if is_playable_ally:
+                                    call screen select_target(combatLib.allies_alive, 'ally')
                                     if _return:
                                         $ targets.append(_return)
                                 else:
-                                    if isAlly:
-                                        $ targets.append(renpy.random.choice(combatlib.alliesAlive))
+                                    if is_ally:
+                                        $ targets.append(selectTargets(combatLib.allies_alive, True))
                                     else:
-                                        $ targets.append(renpy.random.choice(combatlib.enemiesAlive))
-                            elif attackData.target == 'allies':
-                                if isPlayableAlly:
-                                    call screen selection_sprite_allies
-                                    $ targets = combatlib.alliesAlive.copy()
+                                        $ targets.append(selectTargets(combatLib.enemies_alive, True))
+                            elif skill_data.target == 'allies':
+                                if is_playable_ally:
+                                    call screen select_target(combatLib.allies_alive, 'ally', True)
+                                    $ targets = selectTargets(combatLib.allies_alive)
                                 else:
-                                    if isAlly:
-                                        $ targets = combatlib.alliesAlive.copy()
+                                    if is_ally:
+                                        $ targets = selectTargets(combatLib.allies_alive)
                                     else:
-                                        $ targets = combatlib.enemiesAlive.copy()
-                            elif attackData.target == 'self':
-                                if isPlayableAlly:
-                                    call screen selection_sprite_self(attacker)
-                                    $ targets.append(attackerTag)
+                                        $ targets = selectTargets(combatLib.enemies_alive)
+                            elif skill_data.target == 'self':
+                                if is_playable_ally:
+                                    call screen select_target([attacker_tag], 'ally')
+                                    $ targets.append(attacker)
                                 else:
-                                    $ targets.append(attackerTag)
-                            elif attackData.target == 'all':
-                                if isPlayableAlly:
-                                    call screen selection_sprite_all
-                                    $ targets = combatlib.arenaTags.copy()
+                                    $ targets.append(attacker)
+                            elif skill_data.target == 'all':
+                                if is_playable_ally:
+                                    call screen select_target(combatLib.arena_tags, 'any', True)
+                                    $ targets = selectTargets(combatLib.arena_tags)
                                 else:
-                                    $ targets = combatlib.arenaTags.copy()
-                            elif attackData.target == 'any':
-                                if isPlayableAlly:
-                                    call screen selection_sprite_any
+                                    $ targets = selectTargets(combatLib.arena_tags)
+                            elif skill_data.target == 'any':
+                                if is_playable_ally:
+                                    call screen select_target(combatLib.arena_tags, 'any')
                                     if _return:
                                         $ targets.append(_return)
                                 else:
-                                    $ targets.append(renpy.random.choice(combatlib.arenaTags))
+                                    $ targets.append(selectTargets(combatLib.arena_tags, True))
                             jump doAction
                     label doAction:
-                        if (len(targets) == 1) and (attackData.target != 'self'):
-                            $ targetText = ' on {}'.format(combatlib.arenaChars[targets[0]].name)
-                        "[attacker.name] uses [attackName][targetText]."
-                        $ combatlib.actionAttack(attacker, targets, equipment) # meaty function
+                        if (len(targets) == 1) and (skill_data.target != 'self'):
+                            $ target_text = ' on {}'.format(targets[0].name)
+                        "[attacker.name] uses [attack_name][target_text]."
+
+                        # protection and oher teammate effects
+                        $ preventive_event = False
+                        $ preventive_event_txt = ''
+                        if skill_data.target == 'enemy':
+                            python:
+                                if is_ally:
+                                    for enemy_tag in combatLib.enemies_alive:
+                                        if enemy_tag != targets[0].tag:
+                                            for preventive_effect in combatLib.arena[enemy_tag].teammate_preventive_effects:
+                                                if random.randrange(100) < preventive_effect.chance:
+                                                    preventive_event = True
+                                                    method = getattr(effectsLib, preventive_effect.action_fcn)
+                                                    (preventive_event_txt, targets) = method(combatLib.arena[enemy_tag], targets)
+                                                    break
+                                else:
+                                    for ally_tag in combatLib.allies_alive:
+                                        if ally_tag != targets[0].tag:
+                                            for preventive_effect in combatLib.arena[ally_tag].teammate_preventive_effects:
+                                                if random.randrange(100) < preventive_effect.chance:
+                                                    preventive_event = True
+                                                    method = getattr(effectsLib, preventive_effect.action_fcn)
+                                                    (preventive_event_txt, targets) = method(combatLib.arena[ally_tag], targets)
+                                                    break
+                        if preventive_event:
+                            "[preventive_event_txt]"
+                            $ combatLib.setArenaIdle()
+                        $ combatLib.characterAction(attacker, targets, skill) # meaty function
                         jump endCharacterAction
                     label endCharacterAction:
-                        $ turns += 1
-                        $ lastMultiTurn = True
+                        if (skill_data is not None) and (not skill_data.quick_action):
+                            $ turns += 1
+                        $ last_multi_turn = True
                         if turns >= attacker.turns:
+                            $ last_multi_turn = True
                             # End of extra turns if applied
-                            $ effectsLib.triggerRemoveActions(attacker)
+                            $ effectsLib.triggerRemoveEffects(attacker)
                         else:
-                            $ lastMultiTurn = False
+                            $ last_multi_turn = False
                         pause(1.0)
-                        $ teamsHealth = checkTeamHealths()
-                        if teamsHealth[0] < 1:
+                        $ combatLib.setArenaIdle()
+                        $ teams_health = checkTeamHealths()
+                        if teams_health[0] < 1:
                             jump combatWon
-                        elif teamsHealth[1] < 1:
+                        elif teams_health[1] < 1:
                             jump combatLost
-                        if (not lastMultiTurn):
+                        if (not last_multi_turn):
                             jump multipleTurnsCycle
                         else:
                             $ i += 1
-                            if i < len(combatlib.arenaTags):
+                            if i < len(combatLib.arena_tags):
                                 jump charactersCycle
                             else:
-                                jump combatLoop                      
+                                jump combatLoop
                 label endCharacterTurn:
                     pause(1.0)
-                    $ teamsHealth = checkTeamHealths()
-                    if teamsHealth[0] < 1:
+                    $ teams_health = checkTeamHealths()
+                    if teams_health[0] < 1:
                         jump combatWon
-                    elif teamsHealth[1] < 1:
+                    elif teams_health[1] < 1:
                         jump combatLost
                     $ i += 1
-                    if i < len(combatlib.arenaTags):
+                    if i < len(combatLib.arena_tags):
                         jump charactersCycle
                     else:
                         jump combatLoop   
     label combatLost:
         "You lost!"
-        $ combatlib.wonLastCombat = False
+        $ won_combat = False
         jump combatEnded
     label combatWon:
         "You won!"
-        $ combatlib.wonLastCombat = True
+        $ won_combat = True
         jump combatEnded
     label combatEnded:
+        stop music fadeout 2.0
         # TODO: Use renpy.get_screen to hide everything
         python:
             renpy.hide_screen('current_turn')
-            renpy.hide_screen('charStatus')
-            renpy.hide_screen('number_effect')
+            renpy.hide_screen('char_status')
+            renpy.hide_screen('float_num')
             renpy.hide_screen('charTooltip')
-            renpy.hide_screen('equipmentTooltip')
-            if combatlib.wonLastCombat:
-                # Loot
-                maxGold = 0
-                for enemyTag in defaultEnemies:
-                    char = combatlib.arenaChars[enemyTag]
-                    maxGold += char.gold
-                if maxGold > 0:
-                    foundGold = random.randrange(0, maxGold + 1)
-                    renpy.play("audio/sfx/bought_found_item_gold.mp3", channel='audio')
-                    renpy.notify("You found " + str(foundGold) + " gold.")
-                    renpy.pause(1.0)
-                # XP
-                leveledUpChars = []
-                for allyTag in combatlib.alliesAlive:
-                    char = combatlib.arenaChars[allyTag]
-                    if char.isPlayable:
-                        totalXp = char.damageDone + char.healDone
-                        renpy.show_screen("number_effect", x=char.x, y=char.y, val=totalXp, textColor="#2df300", _tag='xp_'+str(char.x)+str(char.y), _transient=True)
+            renpy.hide_screen('skillTooltip')
+            if won_combat:
+                total_xp = 0
+                for allyTag in combatLib.allies_alive:
+                    char = combatLib.arena[allyTag]
+                    if char.is_playable:
+                        char_xp = char.damage_done + char.heal_done
+                        total_xp += char_xp
+                        renpy.show_screen("float_num", x=char.x, y=char.y, val=char_xp, textColor="#2df300", _tag='xp_'+str(char.x)+str(char.y), _transient=True)
                         renpy.play("audio/sfx/xp_plus.mp3", channel='audio')
-                        hasLeveledUp = combatlib.combatChars[char.ogTag].gainXp(totalXp)
                         renpy.pause(1.0)
-                        if hasLeveledUp:
-                            leveledUpChars.append(allyTag)
-                if len(leveledUpChars) > 0:
+                has_leveled_up = playerLib.gainXp(total_xp)
+                if has_leveled_up:
                     renpy.play("audio/sfx/level_up.mp3", channel='audio')
-                    for leveledUpChar in leveledUpChars:
-                        char = combatlib.arenaChars[leveledUpChar]
-                        renpy.show_screen("msg_effect", x=char.x, y=char.y, text="LEVEL UP", _tag='msg_'+str(char.x)+str(char.y), _transient=True)
+                    garlic_combat = combatLib.arena[combatLib.arena_tags[0]]
+                    renpy.show_screen("float_msg", x=garlic_combat.x, y=garlic_combat.y, text="LEVEL UP", _tag='msg_'+str(garlic_combat.x)+str(garlic_combat.y), _transient=True)
                     renpy.pause(1.0)
-            if combatlib.hideSpritesAfterBattle:
-                for charTag in combatlib.arenaTags:
-                    if charTag is not None:
-                        # TODO: Copy hp and mp to og chars for gauntlet cases
-                        tag = str(combatlib.arenaChars[charTag].x) + str(combatlib.arenaChars[charTag].y)
+            if combatLib.hide_sprites:
+                for char_tag in combatLib.arena_tags:
+                    if char_tag is not None:
+                        tag = str(combatLib.arena[char_tag].x) + str(combatLib.arena[char_tag].y)
                         renpy.hide_screen(tag)
                         renpy.hide_screen("status_"+tag)
-            combatlib.arenaChars = {}
-            combatlib.allies = []
-            combatlib.alliesAlive = []
-            combatlib.enemies = []
-            combatlib.enemiesAlive = []
-            combatlib.arenaTags = []
-            playerLib.selectedGuardian = 'garlic'
-        stop music
+            combatLib.resetArena()
+            playerLib.selected_guardian = 'garlic'
+    
         $ quick_menu = True
     
-    return
+    return won_combat

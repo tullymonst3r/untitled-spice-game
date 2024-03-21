@@ -26,19 +26,19 @@ screen regularBtn(val, returnVal, selected = False):
         if val:
             text "{}".format(val) style "itemBtnText" align (0.5, 0.5)
 
-screen attackBtn(equipment, returnVal, selected = False):
+screen attackBtn(skill, returnVal, selected = False):
     fixed:
         xsize 259 ysize 101
         imagebutton:
             idle "item_btn{}.png".format('_selected' if selected else '')
             hover "item_btn{}.png".format('_selected' if selected else '_hovered')
-            hovered Show("equipmentTooltip", equipment=equipment)
-            unhovered Hide("equipmentTooltip")
+            # hovered Show("skillTooltip", skill=skill)
+            # unhovered Hide("skillTooltip")
             if selected == False:
-                action [Hide("equipmentTooltip"), Return(returnVal)]
+                action [Hide("skillTooltip"), Return(returnVal)]
             else:
-                action [Hide("equipmentTooltip"), NullAction()]
-        text "{}".format(equipment.name) style "itemBtnText" align (0.5, 0.5)
+                action [Hide("skillTooltip"), NullAction()]
+        text "{}".format(skill.name) style "itemBtnText" align (0.5, 0.5)
 style itemBtnText:
     size 20
     bold True

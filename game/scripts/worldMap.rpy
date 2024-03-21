@@ -1,7 +1,7 @@
 init python:
     import store.missionslib as missionslib
     import store.playerLib as playerLib
-    import store.combatlib as combatlib
+    import store.combatLib as combatLib
     import store.itemslib as itemslib
     import store.spellslib as spellslib
     import store.effectsLib as effectsLib
@@ -125,11 +125,12 @@ label world:
         elif selection[0] == 2:
             $ showMenuAnimations = True
             # Select Mission
-            call party_menu
-            $ cancel = _return
-            if cancel == False:
-                # Accept and enter mission
-                $ exitMapMenu = True
+            $ exitMapMenu = True
+            # call party_menu
+            # $ cancel = _return
+            # if cancel == False:
+            #     # Accept and enter mission
+            #     $ exitMapMenu = True
         elif selection[0] == 3:
             $ showMenuAnimations = True
             call player_menu

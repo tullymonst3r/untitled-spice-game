@@ -1,0 +1,56 @@
+{
+    "cursed": {
+        "name": "Cursed", "duration": 2, "sfx": "slash",
+        "hp": -5, "mana":-5
+    },
+    "regen": {
+        "name": "Regeneration", "duration": 2, "sfx": "heal",
+        "hp": 10
+    },
+    "exposed": {
+        "name": "Exposed", "duration": 3, "instant_effect": true,
+        "defense": -5
+    },
+    "toughen": {
+        "name": "Toughen", "duration": 3, "instant_effect": true,
+        "defense": 5
+    },
+    "haste": {
+        "name": "Haste", "duration": 3, "instant_effect": true,
+        "speed": 5
+    },
+    "slow": {
+        "name": "Slow", "duration": 3, "instant_effect": true,
+        "speed": -5
+    },
+    "power": {
+        "name": "Power", "duration": 3, "instant_effect": true,
+        "strength": 5
+    },
+    "accu": {
+        "name": "Accuracy", "duration": 3, "instant_effect": true,
+        "accuracy": 5
+    },
+    "overclock": {
+        "name": "Overclock", "duration": 0, "instant_effect": true,
+        "turns":2, "remove_fcn": "overclockRemove"
+    },
+    "stunned": {
+        "name": "Stunned", "duration": 1,
+        "trigger_fcn":"stunApply", "remove_fcn": "stunRemove"
+    },
+    "summon": {
+        "name": "Summon", "duration": 5,
+        "description": "Entity dies after the effect is over.",
+        "remove_fcn": "killSummon"
+    },
+    "trans": {
+        "name": "Transformation", "duration": 3,
+        "description": "Char returns to it's original form after the effect is over.",
+        "remove_fcn": "detransform"
+    },
+    "drunk": {
+        "name": "Drunk", "duration": 3, "instant_effect": true,
+        "reflexes": 25, "finesse": -50, "accuracy": -20
+    }
+}

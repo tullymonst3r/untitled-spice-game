@@ -36,7 +36,7 @@ init -8 python in skillsLib:
             self.ignore_crits = kwargs.get('ignore_crits', False)
             self.ignore_defenses = kwargs.get('ignore_defenses', False)
             self.low_chance = kwargs.get('low_chance', False) # Whether the initial chance of hit is 0 or 100
-            self.quick_action = kwargs.get('quick_action', False) # Whether the initial chance of hit is 0 or 100
+            self.quick_action = kwargs.get('quick_action', False) # Whether the attack grants an extra turn
 
             self.preventive_effects = kwargs.get('preventive_effects', []) # effects applied to target on use
             self.active_effects = kwargs.get('active_effects', []) # effects applied to target on use

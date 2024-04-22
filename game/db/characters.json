@@ -1,6 +1,6 @@
 {
     "garlic": {
-        "name": "Garlic", "sprite_name": "garlic_chives",
+        "name": "Garlic", "sprite_name": "garlic",
         "base_hp": 100, "base_mp": 50, "base_strength": 18,
         "base_defense": 20, "base_mag_defense": 10, "base_speed": 10,
         "base_finesse": 4, "base_reflexes": 20, "base_accuracy": 15,
@@ -77,6 +77,20 @@
                 "name": "Stomp",
                 "skill_data": { "target": "enemies" }
             }
+        ]
+    },
+    "trixie": {
+        "name": "Trixie", "sprite_name": "trixie", "randomize": true,
+        "base_hp": 50, "base_mp": 0, "base_strength": 45,
+        "base_defense": 10, "base_mag_defense": 0, "base_speed": 25,
+        "base_finesse": 5, "base_reflexes": 20, "base_accuracy": 0,
+        "equipped_skills": [
+            { "name": "Slash" },
+            { "name": "Slash" },
+            { "name": "Slash" },
+            { "name": "Bite", "skill_data": { "finesse": 15 } },
+            { "name": "Bite", "skill_data": { "finesse": 15 } },
+            { "name": "Love Song", "skill_data": { "target": "allies", "skill_type": "special", "sfx": "trixie_song", "active_effects": ["haste"] } }
         ]
     },
     "fallenJanny": {

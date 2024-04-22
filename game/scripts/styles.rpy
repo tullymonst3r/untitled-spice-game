@@ -1,3 +1,5 @@
+style whiteText:
+    color "#ffffff"
 style textBtnEnabled:
     size 25
     align (0.5, 0.5)

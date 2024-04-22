@@ -52,11 +52,11 @@ screen skillDetailBox(skill):
         accu = accu * combatLib.accu_multiplier
     vbox:
         spacing 10
-        text "{}".format(skill.name)
+        text "{}".format(skill.name) style "whiteText"
         hbox:
             text "{}".format(skill.skill_data.skill_type) style "sublabel"
             if skill.skill_data.magic_type is not None:
-                text "| {} magic".format(skill.skill_data.magic_type) style "sublabel"
+                text " | {} magic".format(skill.skill_data.magic_type) style "sublabel"
         if skill.skill_data.mp_cost > 0:
             text "MP Cost: {}".format(skill.skill_data.mp_cost) style "label"
         text " •Target: {}".format(skill.skill_data.target) style "label"
@@ -64,7 +64,7 @@ screen skillDetailBox(skill):
             text " •Dmg: {}".format(damage) style "label"
         if accu > 0:
             text " •Acu: {}%".format(accu) style "label"
-        if crit > 0:
+        if (damage > 0) and (crit > 0):
             text " •Crit: {}%".format(crit) style "label"
         if skill.skill_data.hits > 1:
             text " •Hits: {}".format(skill.skill_data.hits) style "label"
@@ -140,6 +140,10 @@ screen charDetailBox(char):
                 text " {0:+}".format(fin_dif) color ("#ff0000ff" if fin_dif < 0 else "#11ff00ff") style "sublabel"
         # text "TS MP: {}".format(char.tsTotalMana) style "sublabel"
 
+screen effect_label(label, val):
+    hbox:
+        text "• {}: ".format(label) style "sublabel"
+        text "{0:+}".format(val) color ("#ff0000ff" if val < 0 else "#11ff00ff") style "sublabel"
 screen effectTooltip(effect):
     zorder 100
     frame:
@@ -150,26 +154,34 @@ screen effectTooltip(effect):
         use effectDetailBox(effect)
         at followMouseEffect
 screen effectDetailBox(effect):
+    python:
+        power = ""
+        multiplier = 1
+        if effect.effect_power > 1:
+            power = " {}".format(effect.effect_power)
+            multiplier = 1.5 * (effect.effect_power - 1)
     vbox:
-        text "{}".format(effect.name) style "label"
+        text "{} {}".format(effect.name, power) style "label"
         text "Duration: {} rounds".format(effect.duration) style "sublabel"
         if effect.hp != 0:
-            text "• HP: {0:+}".format(effect.hp) color ("#ff0000ff" if effect.hp < 0 else "#11ff00ff") style "sublabel"
+            use effect_label("HP", int(effect.hp * multiplier))
         if effect.mp != 0:
-            text "• MP: {0:+}".format(effect.mp) color ("#ff0000ff" if effect.mp < 0 else "#11ff00ff") style "sublabel"
+            use effect_label("MP", int(effect.mp * multiplier))
         if effect.defense != 0:
-            text "• Def: {0:+}%".format(effect.defense) color ("#ff0000ff" if effect.defense < 0 else "#11ff00ff") style "sublabel"
+            use effect_label("Def", int(effect.defense * multiplier))
         if effect.mag_defense != 0:
-            text "• Mag Def: {0:+}%".format(effect.mag_defense) color ("#ff0000ff" if effect.mag_defense < 0 else "#11ff00ff") style "sublabel"
+            use effect_label("Mag Def", int(effect.mag_defense * multiplier))
         if effect.reflexes != 0:
-            text "• Ref: {0:+}%".format(effect.reflexes) color ("#ff0000ff" if effect.reflexes < 0 else "#11ff00ff") style "sublabel"
-        if effect.strength != 0:
-            text "• Str: {0:+}%".format(effect.strength) color ("#ff0000ff" if effect.strength < 0 else "#11ff00ff") style "sublabel"
+            use effect_label("Ref", int(effect.reflexes * multiplier))
         if effect.speed != 0:
-            text "• Spd: {0:+}%".format(effect.speed) color ("#ff0000ff" if effect.speed < 0 else "#11ff00ff") style "sublabel"
+            use effect_label("Spd", int(effect.speed * multiplier))
+        if effect.strength != 0:
+            use effect_label("Str", int(effect.strength * multiplier))
         if effect.accuracy != 0:
-            text "• Acu: {0:+}%".format(effect.accuracy) color ("#ff0000ff" if effect.accuracy < 0 else "#11ff00ff") style "sublabel"
+            use effect_label("Acu", int(effect.accuracy * multiplier))
         if effect.finesse != 0:
-            text "• Fin: {0:+}%".format(effect.finesse) color ("#ff0000ff" if effect.finesse < 0 else "#11ff00ff") style "sublabel"
+            use effect_label("Fin", int(effect.finesse * multiplier))
+        if effect.turns != 0:
+            use effect_label("Turns", int(effect.turns * multiplier))
         if effect.description:
             text "• {}".format(effect.description) style "sublabel"

@@ -6,6 +6,7 @@ init -8 python in charsLib:
     import copy
     import random
     import json
+    import secrets
 
     chars = {}
 
@@ -13,12 +14,14 @@ init -8 python in charsLib:
         char_object = None
         if tag in chars:
             char_object = copy.deepcopy(chars[tag])
+            if char_object.randomize: char_object.sprite_color = "#" + secrets.token_hex(3)
         else:
             chars_json = open(renpy.config.gamedir + "/db/characters.json", "r")
             loaded_chars = json.load(chars_json)
             char = loaded_chars[tag]
             chars_json.close()
             char_object = copy.deepcopy(Char(tag=tag,**char))
+            if char_object.randomize: char_object.sprite_color = "#" + secrets.token_hex(3)
             if ("equipped_skills" in char):
                 for (index, skill) in enumerate(char['equipped_skills']):
                     if isinstance(skill, str):
@@ -52,6 +55,7 @@ init -8 python in charsLib:
         y: int = 0
         zorder: int = 0
         sprite_state = 'idle'
+        sprite_color = None
         damage_done = 0
         heal_done = 0
         summoned_by = None # Tag of the character that summoned it.
@@ -60,7 +64,8 @@ init -8 python in charsLib:
             self.tag = tag
             self.og_tag = tag
             self.name = name
-            self.sprite_name = kwargs.get('sprite_name', 'garlic_chives')
+            self.sprite_name = kwargs.get('sprite_name', 'garlic')
+            self.randomize = kwargs.get('randomize', False)
             self.base_hp = kwargs.get('base_hp', 100)
             self.hp = self.base_hp
             self.base_mp = kwargs.get('base_mp', 0)

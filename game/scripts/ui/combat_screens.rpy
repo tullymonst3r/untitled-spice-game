@@ -64,13 +64,31 @@ screen combat_header:
                                 range combatLib.arena[char_tag].base_mp
                                 left_bar "#1e8cdbff"  right_bar "#ffffffaa"
                                 xysize (325, 15)
+
+
+transform char_sprite_idle_color(x,y,color):
+    pos (x, y) matrixcolor TintMatrix(color) * SaturationMatrix(1.0)
 transform char_sprite_idle(x,y):
     pos (x, y) matrixcolor None
+
+transform char_sprite_protect_color(x,y,color):
+    pos (x, y) matrixcolor TintMatrix(color) * SaturationMatrix(1.0)
+    linear 0.3 pos (960, 540)
+    pause 0.5
+    linear 0.25 pos (x, y)
 transform char_sprite_protect(x,y):
     pos (x, y)
     linear 0.3 pos (960, 540)
     pause 0.5
     linear 0.25 pos (x, y)
+
+transform char_sprite_hurt_color(x,y,color):
+    pos (x+random.randrange(10,20), y+random.randrange(10,20))
+    linear 0.1 pos (x, y) matrixcolor TintMatrix('#ff0000') * SaturationMatrix(1.0)
+    linear 0.1 pos (x+random.randrange(10,20), y+random.randrange(10,20))
+    linear 0.1 pos (x, y)
+    linear 0.1 pos (x+random.randrange(10,20), y+random.randrange(10,20))
+    linear 0.1 pos (x, y) matrixcolor TintMatrix(color) * SaturationMatrix(1.0)
 transform char_sprite_hurt(x,y):
     pos (x+random.randrange(10,20), y+random.randrange(10,20))
     linear 0.1 pos (x, y) matrixcolor TintMatrix('#ff0000') * SaturationMatrix(1.0)
@@ -78,25 +96,64 @@ transform char_sprite_hurt(x,y):
     linear 0.1 pos (x, y)
     linear 0.1 pos (x+random.randrange(10,20), y+random.randrange(10,20))
     linear 0.1 pos (x, y) matrixcolor None
+
 screen char_sprite(char):
+    python:
+        hp_percentage = (char.base_hp/100)*char.hp
     fixed:
         pos (char.x, char.y)
         xsize 200 ysize 200
-        add "{}".format(char.sprite_name) anchor (0.5, 1.0)
         if char.sprite_state == 'protect':
-            at char_sprite_protect(char.x, char.y)
+            add "chars/{}/idle.png".format(char.sprite_name) anchor (0.5, 1.0)
+            if char.sprite_color is not None:
+                at char_sprite_protect_color(char.x, char.y, char.sprite_color)
+            else:
+                at char_sprite_protect(char.x, char.y)
         elif char.sprite_state == 'hurt':
-            at char_sprite_hurt(char.x, char.y)
+            add "chars/{}/hurt.png".format(char.sprite_name) anchor (0.5, 1.0)
+            if char.sprite_color is not None:
+                at char_sprite_hurt_color(char.x, char.y, char.sprite_color)
+            else:
+                at char_sprite_hurt(char.x, char.y)
+        elif char.sprite_state == 'attack':
+            add "chars/{}/attack.png".format(char.sprite_name) anchor (0.5, 1.0)
+            if char.sprite_color is not None:
+                at char_sprite_idle_color(char.x, char.y, char.sprite_color)
+            else:
+                at char_sprite_idle(char.x, char.y)
+        else:
+            if hp_percentage < 25:
+                add "chars/{}/low.png".format(char.sprite_name) anchor (0.5, 1.0)
+            else:
+                add "chars/{}/idle.png".format(char.sprite_name) anchor (0.5, 1.0)
+            if char.sprite_color is not None:
+                at char_sprite_idle_color(char.x, char.y, char.sprite_color)
+            else:
+                at char_sprite_idle(char.x, char.y)
+screen dead_char_sprite(char):
+    fixed:
+        pos (char.x, char.y)
+        xsize 200 ysize 200
+        add "chars/{}/defeated.png".format(char.sprite_name) anchor (0.5, 1.0)
+        if char.sprite_color is not None:
+            at char_sprite_idle_color(char.x, char.y, char.sprite_color)
         else:
             at char_sprite_idle(char.x, char.y)
 
+screen block(x,y,h,w):
+    frame:
+        anchor (0.5,0.5)
+        pos (x,y)
+        vbox:
+            text "w:{}-h:{}".format(w,h) style "textBtnEnabled"
+            text "{}-{}".format(x,y) style "textBtnEnabled"
+
 
 screen char_status(char):
-    zorder -1
     if char.tag in combatLib.arena_tags:
         vbox:
             pos (char.x, char.y)
-            anchor (0.0, 0.0)
+            anchor (0.0, 0.5)
             fixed:
                 xanchor 0.5
                 xsize 203 ysize 50
@@ -134,12 +191,12 @@ screen char_status(char):
                     for effect in char.effects:
                         if effect is not None:
                             use statusEffectIcon(effect)
-        mousearea:
-            pos (char.x, char.y)
-            anchor (0.5, 0.0)
-            xsize 200 ysize 50
-            hovered Show("charTooltip", char=char)
-            unhovered Hide("charTooltip")
+        # mousearea:
+        #     pos (char.x, char.y)
+        #     anchor (0.5, 0.0)
+        #     xsize 200 ysize 50
+        #     hovered Show("charTooltip", char=char)
+        #     unhovered Hide("charTooltip")
 
 screen statusEffectIcon(effect):
     fixed:
@@ -160,7 +217,7 @@ screen cancel_select_btn():
             action [Jump("actionSelection")]
 screen select_target(in_list, target_type, select_all=False):
     default hovered_all = False
-    zorder -1
+    zorder 10
     use cancel_select_btn
     for char in list(combatLib.arena.values()):
         if char.tag in in_list:
@@ -178,14 +235,63 @@ screen select_target(in_list, target_type, select_all=False):
                     else:
                         action [Hide('select_target'), Return(char)]
 
-
 screen actions_box(char):
     zorder -1
     frame:
         xpadding 30
         ypadding 30
+        xalign 0.5 yalign 1.0
+        xsize 1920 ysize 180
+        hbox:
+            xalign 0.5 yalign 0.5
+            spacing 100
+            hbox:
+                yalign 0.5
+                spacing 25
+                for (index, skill) in enumerate(char.skills):
+                    if skill is not None:
+                        if skill.cd > 0:
+                            use regularBtn("CD: {}".format(skill.cd), None, True)
+                        elif char.mp < (skill.skill_data.mp_cost):
+                            use regularBtn("Not enough mp", None, True)
+                        # elif skill.skill_data.magic_type == 'new':
+                        # elif (hasattr(skill, 'magicType')) and (skill.skill_data.magic_type == 'new') and (char.tsTotalMana < 1):
+                            # use regularBtn("Need Terrasphere", None, True)
+                        else:
+                            use attackBtn(skill, skill)
+                    else:
+                        use regularBtn('', None, True)
+            hbox:
+                spacing 30
+                yalign 0.5
+                frame:
+                    yalign 0.5
+                    button:
+                        xsize 150 ysize 75
+                        text "Recover" style "sublabel" align (0.5, 0.5)
+                        action [Hide("actions_box"), Return(recover)]
+                frame:
+                    yalign 0.5
+                    button:
+                        xsize 150 ysize 75
+                        text "Use item" style "sublabel" align (0.5, 0.5)
+                        action [Hide("actions_box"), Jump("itemSelection")]
+                frame:
+                    align (1.0, 0.5)
+                    button:
+                        xsize 70 ysize 110
+                        text "Flee" style "sublabel" align (0.5, 0.5)
+                        action [Hide("actions_box"), Jump("confirmEscape")]
+            
+
+
+screen actions_box_old(char):
+    zorder -1
+    frame:
+        xpadding 30
+        ypadding 30
         xalign 0.5 yalign 1.01
-        xsize 1000 ysize 250
+        xsize 900 ysize 250
         hbox:
             align (0.5, 0.5)
             spacing 60
@@ -275,7 +381,7 @@ screen confirm_escape():
             vbox:
                 spacing 20
                 align (0.5, 0.5)
-                text "Do you want to escape from battle?" align (0.5, 0.5)
+                text "Do you want to flee from battle?" align (0.5, 0.5)
                 text "It will be marked as lost!" align (0.5, 0.5) style "sublabel"
                 null height 10
                 hbox:
@@ -283,16 +389,16 @@ screen confirm_escape():
                     spacing 150
                     textbutton "Yes" action Jump("combatLost")
                     textbutton "No" action Jump("actionSelection")
-# transform turn_animate:
-#     anchor (0.5, 3.5)
-#     ease 2.0 anchor (0.5, 3.0)
-#     ease 2.0 anchor (0.5, 3.5)
-#     repeat
 transform turn_animate:
-    alpha 1.0
-    ease 2.0 alpha 0.0
-    ease 2.0 alpha 1.0
+    anchor (0.5, 3.0) alpha 0.5
+    ease 2.0 anchor (0.5, 2.5)
+    ease 2.0 anchor (0.5, 3.0)
     repeat
+# transform turn_animate:
+#     alpha 1.0
+#     ease 2.0 alpha 0.0
+#     ease 2.0 alpha 1.0
+#     repeat
 screen current_turn(x,y):
     zorder 100
     fixed:

@@ -1,6 +1,12 @@
 ﻿
 define config.rollback_enabled = False
-define garlic = Character("Garlic Chives", color="#256b36")
+# define garlic = Character("Garlic Chives", color="#256b36")
+transform leftFlip:
+    xalign 0.0 xzoom -1.0
+transform rightFlip:
+    xalign 1.0 xzoom -1.0
+transform flip:
+    xzoom -1.0
 
 
 init python:

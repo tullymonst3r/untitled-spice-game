@@ -17,6 +17,7 @@
                     index = combatLib.enemies_alive.index(char_tag)
                     del combatLib.enemies_alive[index]
                     renpy.play("audio/sfx/char_death.mp3", channel='audio')
+                    renpy.show_screen("dead_char_sprite", _tag="dead_"+str(char.x) + str(char.y), char=char, _zorder=char.zorder)
         allies_hp = 0
         for char_tag in combatLib.allies:
             if char_tag is not None:
@@ -34,6 +35,7 @@
                     index = combatLib.allies_alive.index(char_tag)
                     del combatLib.allies_alive[index]
                     renpy.play("audio/sfx/char_death.mp3", channel='audio')
+                    renpy.show_screen("dead_char_sprite", _tag="dead_"+str(char.x) + str(char.y), char=char, _zorder=char.zorder)
         return (enemies_hp, allies_hp)
     
     def selectTargets(in_list, random = False):
@@ -47,6 +49,7 @@
 label combat(combatants=([],[])):
     window hide  # Hide the window and quick menu while in combat
     $ quick_menu = False
+    stop music fadeout 2.0
 
     python:
         # startup battle
@@ -60,36 +63,50 @@ label combat(combatants=([],[])):
                 newTag = char_tag + str(total_char_count)
                 combatLib.addCharacterToArena(char_tag, newTag, is_playable=True)
                 combatLib.allies.append(newTag)
+                placing = True
+                while placing:
+                    if len(combatLib.ally_grid_pos_used) == 16: placing = False # No more space available
+                    h = random.randrange(0, 4)
+                    w = random.randrange(0, 4)
+                    pos_txt = str(h)+str(w)
+                    if pos_txt in combatLib.ally_grid_pos_used: continue # Position used
+                    combatLib.ally_grid_pos_used.append(pos_txt)
+                    x = combatLib.ally_grid[w][h][0]
+                    y = combatLib.ally_grid[w][h][1]
+                    zorder = h + -1
+                    # renpy.show_screen("block", _tag='a'+str(x) + str(y), h=h, w=w, x=x, y=y)
+                    placing = False # Char placed
+
                 # TODO: Automate the position of the sprites to allow more than 4
-                if i == 0:
-                    x = 700
-                    y = 700
-                    zorder = -4
-                elif i == 1:
-                    x = 450
-                    y = 500
-                    zorder = -5
-                elif i == 2:
-                    x = 450
-                    y = 900
-                    zorder = -3
-                elif i == 3:
-                    x = 200
-                    y = 700
-                    zorder = -4
-                else:
-                    x = 0
-                    y = 0
-                    zorder = -6
+                # if i == 0:
+                #     x = 700
+                #     y = 700
+                #     zorder = -4
+                # elif i == 1:
+                #     x = 450
+                #     y = 500
+                #     zorder = -5
+                # elif i == 2:
+                #     x = 450
+                #     y = 900
+                #     zorder = -3
+                # elif i == 3:
+                #     x = 200
+                #     y = 700
+                #     zorder = -4
+                # else:
+                #     x = 0
+                #     y = 0
+                #     zorder = -6
                 combatLib.arena[newTag].x = x
                 combatLib.arena[newTag].y = y
                 combatLib.arena[newTag].zorder = zorder
                 renpy.show_screen("char_sprite", _tag=str(x) + str(y), char=combatLib.arena[newTag], _zorder=zorder)
-                renpy.show_screen("char_status", _tag="status_"+str(x)+str(y), char=combatLib.arena[newTag])
+                renpy.show_screen("char_status", _tag="status_"+str(x)+str(y), char=combatLib.arena[newTag], _zorder=zorder)
                 total_char_count += 1
                 # cap at 4 members on each team
-                if i == 4:
-                    break
+                # if i == 4:
+                #     break
         combatLib.allies_alive = combatLib.allies.copy()
         # set enemies' allies sprites and total enemies' hp for win condition
         for (i, char_tag) in enumerate(combatants[1]):
@@ -97,37 +114,51 @@ label combat(combatants=([],[])):
                 newTag = char_tag + str(total_char_count)
                 combatLib.addCharacterToArena(char_tag, newTag)
                 combatLib.enemies.append(newTag)
-                if i == 0:
-                    x = 1300
-                    y = 700
-                    zorder = -4
-                elif i == 1:
-                    x = 1500
-                    y = 500
-                    zorder = -5
-                elif i == 2:
-                    x = 1500
-                    y = 900
-                    zorder = -3
-                elif i == 3:
-                    x = 1800
-                    y = 700
-                    zorder = -4
-                else:
-                    x = 0
-                    y = 0
-                    zorder = -6
+                placing = True
+                while placing:
+                    if len(combatLib.enemy_grid_pos_used) == 30: placing = False # No more space available
+                    h = random.randrange(1, 5)
+                    w = random.randrange(0, 6)
+                    pos_txt = str(h)+str(w)
+                    if pos_txt in combatLib.enemy_grid_pos_used: continue # Position used
+                    combatLib.enemy_grid_pos_used.append(pos_txt)
+                    x = combatLib.enemy_grid[w][h][0]
+                    y = combatLib.enemy_grid[w][h][1]
+                    zorder = h + -1
+                    # renpy.show_screen("block", _tag='a'+str(x) + str(y), h=h, w=w, x=x, y=y)
+                    placing = False # Char placed
+                # if i == 0:
+                #     x = 1300
+                #     y = 700
+                #     zorder = -4
+                # elif i == 1:
+                #     x = 1550
+                #     y = 500
+                #     zorder = -5
+                # elif i == 2:
+                #     x = 1550
+                #     y = 900
+                #     zorder = -3
+                # elif i == 3:
+                #     x = 1800
+                #     y = 700
+                #     zorder = -4
+                # else:
+                #     x = 0
+                #     y = 0
+                #     zorder = -6
                 combatLib.arena[newTag].x = x
                 combatLib.arena[newTag].y = y
                 combatLib.arena[newTag].zorder = zorder
                 renpy.show_screen("char_sprite", _tag=str(x) + str(y), char=combatLib.arena[newTag], _zorder=zorder)
-                renpy.show_screen("char_status", _tag="status_"+str(x)+str(y), char=combatLib.arena[newTag])
+                renpy.show_screen("char_status", _tag="status_"+str(x)+str(y), char=combatLib.arena[newTag], _zorder=zorder)
                 total_char_count += 1
                 # cap at 4 members on each team
-                if i == 4:
-                    break
+                # if i == 4:
+                #     break
         combatLib.enemies_alive = combatLib.enemies.copy()
         combatLib.arena_tags = combatLib.arena_tags
+        combatLib.default_arena_tags = combatLib.arena_tags.copy()
         combatLib.enemies = combatLib.enemies
         combatLib.allies = combatLib.allies
         defaultEnemies = combatLib.enemies.copy()
@@ -361,10 +392,13 @@ label combat(combatants=([],[])):
         # TODO: Use renpy.get_screen to hide everything
         python:
             renpy.hide_screen('current_turn')
-            renpy.hide_screen('char_status')
+            # renpy.hide_screen('char_status')
             renpy.hide_screen('float_num')
             renpy.hide_screen('charTooltip')
             renpy.hide_screen('skillTooltip')
+            combatLib.ally_grid_pos_used = []
+            combatLib.enemy_grid_pos_used = []
+            # renpy.hide_screen('dead_char_sprite')
             if won_combat:
                 total_xp = 0
                 for allyTag in combatLib.allies_alive:
@@ -378,15 +412,16 @@ label combat(combatants=([],[])):
                 has_leveled_up = playerLib.gainXp(total_xp)
                 if has_leveled_up:
                     renpy.play("audio/sfx/level_up.mp3", channel='audio')
-                    garlic_combat = combatLib.arena[combatLib.arena_tags[0]]
+                    garlic_combat = combatLib.arena[combatLib.default_arena_tags[0]]
                     renpy.show_screen("float_msg", x=garlic_combat.x, y=garlic_combat.y, text="LEVEL UP", _tag='msg_'+str(garlic_combat.x)+str(garlic_combat.y), _transient=True)
                     renpy.pause(1.0)
             if combatLib.hide_sprites:
-                for char_tag in combatLib.arena_tags:
+                for char_tag in combatLib.default_arena_tags:
                     if char_tag is not None:
                         tag = str(combatLib.arena[char_tag].x) + str(combatLib.arena[char_tag].y)
                         renpy.hide_screen(tag)
                         renpy.hide_screen("status_"+tag)
+                        renpy.hide_screen("dead_"+tag)
             combatLib.resetArena()
             playerLib.selected_guardian = 'garlic'
     
